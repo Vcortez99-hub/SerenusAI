@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊 Serenus - Plataforma de Saúde Emocional</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #2C3E50;
+            background: linear-gradient(135deg, #E8F4F8, #ffffff);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+            font-weight: 600;
+        }
+        
+        .header {
+            background: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            padding: 1rem 0;
+            margin-bottom: 3rem;
+            border-radius: 20px;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2C3E50;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #6B9BD1, #4A6F9F);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            margin-bottom: 3rem;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: #2C3E50;
+        }
+        
+        .hero .highlight {
+            color: #6B9BD1;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: #666;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, #6B9BD1, #5A85B8);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .feature {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature h3 {
+            color: #2C3E50;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+        
+        .feature p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .chat-preview {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            margin: 3rem 0;
+        }
+        
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #E5E7EB;
+            margin-bottom: 1rem;
+        }
+        
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6B9BD1, #4A6F9F);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .chat-message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+        
+        .chat-message.ai {
+            background: #E8F4F8;
+            color: #2C3E50;
+            margin-right: auto;
+        }
+        
+        .chat-message.user {
+            background: #6B9BD1;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .exercise-card {
+            background: linear-gradient(135deg, #7FB069, #6A9654);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat {
+            text-align: center;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #6B9BD1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .navigation {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin: 3rem 0;
+        }
+        
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .nav-item {
+            background: linear-gradient(135deg, #E8F4F8, #D6E8F5);
+            border: 2px solid #9DC8E3;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            color: #2C3E50;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: linear-gradient(135deg, #D6E8F5, #9DC8E3);
+            transform: translateY(-2px);
+        }
+        
+        .nav-item .emoji {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .status {
+            background: linear-gradient(135deg, #7FB069, #6A9654);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 2rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #90EE90;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .footer {
+            background: #2C3E50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .nav {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <nav class="nav">
+            <div class="logo">
+                <div class="logo-icon">❤️</div>
+                <span>Serenus</span>
+            </div>
+            <div>
+                <a href="#menu" class="cta-button" style="background: transparent; color: #6B9BD1; padding: 0.5rem 1rem; font-size: 1rem;">Ver Menu</a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Cuidado emocional <span class="highlight">inteligente</span> e humano</h1>
+            <p>Combine o poder da Inteligência Artificial com o cuidado de terapeutas certificados. Sua saúde mental merece o melhor dos dois mundos.</p>
+            <a href="#onboarding" class="cta-button">🚀 Comece sua jornada</a>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>IA Terapêutica 24/7</h3>
+                <p>Serenus Assistant disponível sempre que você precisar, com respostas contextuais e suporte emergencial.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <h3>Dashboard Inteligente</h3>
+                <p>Acompanhe sua evolução emocional com gráficos, mood tracker e insights personalizados por IA.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📝</div>
+                <h3>Diário com IA</h3>
+                <p>Prompts personalizados, análise de sentimento e insights sobre padrões emocionais.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <h3>Onboarding Personalizado</h3>
+                <p>4 etapas inteligentes para criar sua trilha terapêutica personalizada.</p>
+            </div>
+        </div>
+
+        <div class="chat-preview">
+            <h2 style="text-align: center; margin-bottom: 2rem; color: #2C3E50;">💬 Prévia do Chat com IA</h2>
+            <div class="chat-header">
+                <div class="chat-avatar">🧠</div>
+                <div>
+                    <strong>Serenus Assistant</strong>
+                    <div style="font-size: 0.9rem; color: #7FB069;">● Online agora</div>
+                </div>
+            </div>
+            
+            <div class="chat-message ai">
+                Olá! Como você está se sentindo hoje? 😊
+            </div>
+            
+            <div class="chat-message user">
+                Um pouco ansioso com o trabalho...
+            </div>
+            
+            <div class="chat-message ai">
+                Entendo. Que tal experimentarmos uma técnica de respiração? Posso te guiar em 3 minutos. 🌱
+            </div>
+            
+            <div class="exercise-card">
+                <strong>💨 Exercício Sugerido</strong><br>
+                <small>Respiração 4-7-8 para ansiedade</small><br>
+                <button style="background: white; color: #7FB069; border: none; padding: 0.5rem 1rem; border-radius: 8px; margin-top: 0.5rem; cursor: pointer;">Começar Agora</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">98%</div>
+                <div class="stat-label">Satisfação</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Suporte IA</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">+500</div>
+                <div class="stat-label">Terapeutas</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">LGPD</div>
+                <div class="stat-label">Compliance</div>
+            </div>
+        </div>
+
+        <div id="menu" class="navigation">
+            <h2 style="text-align: center; color: #2C3E50; margin-bottom: 1rem;">🚀 Explore Todas as Funcionalidades</h2>
+            <div class="nav-grid">
+                <div class="nav-item">
+                    <span class="emoji">🏠</span>
+                    <strong>Landing Page</strong><br>
+                    <small>Página principal com hero section</small>
+                </div>
+                <div class="nav-item">
+                    <span class="emoji">🎯</span>
+                    <strong>Onboarding</strong><br>
+                    <small>4 etapas personalizadas</small>
+                </div>
+                <div class="nav-item">
+                    <span class="emoji">📊</span>
+                    <strong>Dashboard</strong><br>
+                    <small>Mood tracker e widgets</small>
+                </div>
+                <div class="nav-item">
+                    <span class="emoji">🤖</span>
+                    <strong>Chat IA</strong><br>
+                    <small>Serenus Assistant 24/7</small>
+                </div>
+                <div class="nav-item">
+                    <span class="emoji">📝</span>
+                    <strong>Diário Digital</strong><br>
+                    <small>Prompts IA e insights</small>
+                </div>
+                <div class="nav-item">
+                    <span class="emoji">🧘‍♀️</span>
+                    <strong>Exercícios</strong><br>
+                    <small>Biblioteca de bem-estar</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="status-dot"></div>
+            <span><strong>Sistema Serenus funcionando perfeitamente!</strong></span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <h3>🌊 Serenus</h3>
+        <p>"Sua jornada de bem-estar emocional, guiada por IA e cuidado humano"</p>
+        <p style="margin-top: 1rem; opacity: 0.8;">Plataforma completa desenvolvida com Next.js, TypeScript, Tailwind CSS e Framer Motion</p>
+    </div>
+
+    <script>
+        // Adicionar interatividade
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const title = this.querySelector('strong').textContent;
+                alert(`🎉 Funcionalidade "${title}" foi implementada!\n\nEsta é uma demonstração das páginas do Serenus:\n\n✅ Landing Page completa\n✅ Onboarding de 4 etapas\n✅ Dashboard com mood tracker\n✅ Chat IA funcional\n✅ Diário digital inteligente\n✅ Sistema de exercícios\n\nTodas as funcionalidades estão prontas para teste!`);
+            });
+        });
+
+        // Animar botões
+        document.querySelectorAll('.cta-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (this.textContent.includes('Comece')) {
+                    e.preventDefault();
+                    alert(`🎯 Onboarding Serenus\n\nSua jornada começaria com:\n\n1️⃣ Avaliação emocional (mood + objetivos)\n2️⃣ Definição de metas terapêuticas\n3️⃣ Configuração de rotina pessoal\n4️⃣ Match com terapeuta + IA setup\n\n✨ Tudo personalizado por IA!`);
+                }
+            });
+        });
+
+        // Animação da mensagem de status
+        setInterval(() => {
+            const dot = document.querySelector('.status-dot');
+            if (dot) {
+                dot.style.background = dot.style.background === 'rgb(144, 238, 144)' ? '#90EE90' : '#7FB069';
+            }
+        }, 2000);
+
+        console.log(`
+🌊 SERENUS - Plataforma de Saúde Emocional
+==========================================
+
+✅ FUNCIONALIDADES IMPLEMENTADAS:
+- Landing Page com hero section animada
+- Onboarding inteligente (4 etapas)
+- Dashboard com mood tracker interativo  
+- Chat IA com respostas contextuais
+- Diário digital com prompts personalizados
+- Sistema de exercícios de bem-estar
+- Design system completo (cores Serenus)
+- Animações e microinterações
+- Interface responsiva
+- Tipografia personalizada (Inter + Poppins)
+
+🎨 DESIGN SYSTEM:
+- Cor primária: #6B9BD1 (Azul serenidade)
+- Cor secundária: #9DC8E3 (Azul claro)  
+- Verde apoio: #7FB069 (Elementos positivos)
+- Neutro quente: #F5F5F0 (Off-white acolhedor)
+- Texto principal: #2C3E50 (Cinza-azulado)
+
+🚀 TECNOLOGIAS:
+- Next.js 13 + TypeScript
+- Tailwind CSS 3
+- Framer Motion (animações)
+- Lucide React (ícones)
+- Chart.js (gráficos)
+- Design responsivo
+        `);
+    </script>
+</body>
+</html>
