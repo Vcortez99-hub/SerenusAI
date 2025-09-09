@@ -9,10 +9,14 @@ import {
   ArrowLeft,
   Volume2,
   Star,
-  Sparkles
+  Sparkles,
+  Loader2,
+  Heart,
+  Zap
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { OpenAIService } from '@/services/openai'
 
 interface Message {
   id: string
@@ -25,7 +29,7 @@ interface Message {
 const initialMessages: Message[] = [
   {
     id: '1',
-    content: 'Olá! Eu sou a Serenus, sua assistente de bem-estar emocional. Como você está se sentindo hoje?',
+    content: 'Olá! Eu sou a Serenus, sua assistente de bem-estar emocional especializada. 🌸 Como você está se sentindo hoje? Estou aqui para te escutar e oferecer suporte.',
     sender: 'ai',
     timestamp: new Date(),
     type: 'text'
@@ -33,18 +37,20 @@ const initialMessages: Message[] = [
 ]
 
 const quickSuggestions = [
-  'Estou me sentindo ansioso',
-  'Preciso de ajuda para relaxar',
-  'Quero fazer um exercício de respiração',
-  'Como posso melhorar meu humor?'
+  { text: 'Estou me sentindo ansioso', icon: '😰', color: 'from-yellow-400 to-orange-500' },
+  { text: 'Preciso de ajuda para relaxar', icon: '🧘‍♀️', color: 'from-blue-400 to-blue-600' },
+  { text: 'Quero fazer um exercício de respiração', icon: '🌸', color: 'from-green-400 to-green-600' },
+  { text: 'Como posso melhorar meu humor?', icon: '💜', color: 'from-purple-400 to-purple-600' }
 ]
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const openAIService = useRef<OpenAIService | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -54,27 +60,45 @@ export default function Chat() {
     scrollToBottom()
   }, [messages])
 
-  const generateAIResponse = (userMessage: string): string => {
-    const responses = {
-      ansioso: 'Entendo que você está se sentindo ansioso. Vamos tentar um exercício de respiração juntos? Respire fundo por 4 segundos, segure por 7 e expire por 8. Repita algumas vezes.',
-      triste: 'Sinto muito que você esteja passando por um momento difícil. Lembre-se de que é normal sentir tristeza às vezes. Que tal conversarmos sobre o que está te incomodando?',
-      estressado: 'O estresse pode ser muito desafiador. Uma técnica que pode ajudar é a atenção plena. Tente focar no momento presente e em sua respiração por alguns minutos.',
-      feliz: 'Que maravilha saber que você está se sentindo bem! Momentos de alegria são preciosos. O que está contribuindo para esse sentimento positivo hoje?',
-      default: 'Obrigada por compartilhar isso comigo. Cada sentimento é válido e importante. Como posso te ajudar hoje? Posso sugerir alguns exercícios ou simplesmente conversar sobre o que está em sua mente.'
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+    if (apiKey) {
+      openAIService.current = new OpenAIService(apiKey)
     }
+  }, [])
 
-    const lowerMessage = userMessage.toLowerCase()
-    
-    if (lowerMessage.includes('ansioso') || lowerMessage.includes('ansiedade')) {
-      return responses.ansioso
-    } else if (lowerMessage.includes('triste') || lowerMessage.includes('tristeza')) {
-      return responses.triste
-    } else if (lowerMessage.includes('estresse') || lowerMessage.includes('estressado')) {
-      return responses.estressado
-    } else if (lowerMessage.includes('feliz') || lowerMessage.includes('alegre') || lowerMessage.includes('bem')) {
-      return responses.feliz
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
+    if (openAIService.current) {
+      try {
+        const response = await openAIService.current.generateResponse(userMessage, conversationHistory)
+        return response
+      } catch (error) {
+        console.error('Error generating AI response:', error)
+        return 'Desculpe, estou enfrentando algumas dificuldades técnicas no momento. Que tal tentarmos uma técnica de respiração simples enquanto isso? Respire fundo e expire lentamente. 🌸'
+      }
     } else {
-      return responses.default
+      // Fallback para quando não há API key configurada
+      const responses = {
+        ansioso: 'Percebo que você está se sentindo ansioso. Vamos tentar juntos um exercício de respiração? Respire fundo por 4 segundos, segure por 7 e expire por 8. Repita algumas vezes. 🌸',
+        triste: 'Sinto muito que você esteja passando por um momento difícil. É normal sentir tristeza às vezes. Gostaria de conversar sobre o que está te incomodando? 💙',
+        estressado: 'O estresse pode ser desafiador. Uma técnica que pode ajudar é a atenção plena: foque no momento presente, sinta seus pés no chão. Vamos tentar juntos? 🍃',
+        feliz: 'Que maravilhoso saber que você está se sentindo bem! 😊 Momentos de alegria merecem ser celebrados. O que está contribuindo para esse sentimento?',
+        default: 'Obrigada por compartilhar isso comigo. Cada sentimento é válido e importante. Como posso te ajudar hoje? 💚'
+      }
+
+      const lowerMessage = userMessage.toLowerCase()
+      
+      if (lowerMessage.includes('ansioso') || lowerMessage.includes('ansiedade')) {
+        return responses.ansioso
+      } else if (lowerMessage.includes('triste') || lowerMessage.includes('tristeza')) {
+        return responses.triste
+      } else if (lowerMessage.includes('estresse') || lowerMessage.includes('estressado')) {
+        return responses.estressado
+      } else if (lowerMessage.includes('feliz') || lowerMessage.includes('alegre') || lowerMessage.includes('bem')) {
+        return responses.feliz
+      } else {
+        return responses.default
+      }
     }
   }
 
@@ -92,18 +116,30 @@ export default function Chat() {
     setInputValue('')
     setIsTyping(true)
 
-    // Simulate AI thinking time
-    setTimeout(() => {
+    // Generate AI response
+    try {
+      const aiContent = await generateAIResponse(content)
+      
+      // Update conversation history
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: content },
+        { role: 'assistant', content: aiContent }
+      ])
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateAIResponse(content),
+        content: aiContent,
         sender: 'ai',
         timestamp: new Date()
       }
       
       setMessages(prev => [...prev, aiResponse])
       setIsTyping(false)
-    }, 1500)
+    } catch (error) {
+      console.error('Error in handleSendMessage:', error)
+      setIsTyping(false)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -211,10 +247,9 @@ export default function Chat() {
                     </div>
                     <span className="text-xs font-medium text-gray-600">Serenus AI</span>
                   </div>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="w-4 h-4 text-green-500 animate-spin" />
+                    <span className="text-sm text-gray-600">Pensando com carinho...</span>
                   </div>
                 </div>
               </motion.div>
@@ -230,30 +265,58 @@ export default function Chat() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-4"
             >
-              <p className="text-sm text-gray-600 mb-3 text-center">Sugestões rápidas:</p>
-              <div className="flex flex-wrap gap-2 justify-center">
+              <p className="text-sm text-gray-600 mb-4 text-center flex items-center justify-center space-x-2">
+                <Sparkles className="w-4 h-4" />
+                <span>Sugestões para começar</span>
+                <Sparkles className="w-4 h-4" />
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {quickSuggestions.map((suggestion, index) => (
-                  <button
+                  <motion.button
                     key={index}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:bg-gray-50 hover:border-primary-300 transition-colors"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleSuggestionClick(suggestion.text)}
+                    className="group p-4 bg-white border border-gray-200 rounded-xl text-left hover:shadow-md transition-all duration-200 hover:border-gray-300"
                   >
-                    {suggestion}
-                  </button>
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-10 h-10 bg-gradient-to-r ${suggestion.color} rounded-full flex items-center justify-center text-white shadow-sm`}>
+                        <span className="text-lg">{suggestion.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
+                          {suggestion.text}
+                        </p>
+                      </div>
+                      <Heart className="w-4 h-4 text-gray-300 group-hover:text-red-400 transition-colors" />
+                    </div>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
           )}
 
           {/* Input Area */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {!isTyping && inputValue && (
+              <div className="px-4 pt-3 pb-1 bg-gradient-to-r from-primary-50 to-green-50 border-b">
+                <div className="flex items-center space-x-2 text-xs text-gray-600">
+                  <Zap className="w-3 h-3 text-primary-500" />
+                  <span>Serenus está pronta para te ajudar</span>
+                  <Heart className="w-3 h-3 text-red-400 animate-pulse" />
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="flex items-end space-x-3 p-4">
-              <button
+              <motion.button
                 type="button"
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 text-gray-500 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
               >
                 <Paperclip className="w-5 h-5" />
-              </button>
+              </motion.button>
               
               <div className="flex-1">
                 <input
@@ -261,31 +324,39 @@ export default function Chat() {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  placeholder={isTyping ? "Aguarde a resposta..." : "Como você está se sentindo hoje?"}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none placeholder-gray-400"
                   disabled={isTyping}
                 />
               </div>
               
-              <button
+              <motion.button
                 type="button"
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
               >
                 <Mic className="w-5 h-5" />
-              </button>
+              </motion.button>
               
-              <button
+              <motion.button
                 type="submit"
                 disabled={!inputValue.trim() || isTyping}
+                whileHover={inputValue.trim() && !isTyping ? { scale: 1.05 } : {}}
+                whileTap={inputValue.trim() && !isTyping ? { scale: 0.95 } : {}}
                 className={cn(
-                  "p-3 rounded-xl transition-all duration-200",
+                  "p-3 rounded-xl transition-all duration-200 relative overflow-hidden",
                   inputValue.trim() && !isTyping
-                    ? "bg-primary-500 text-white hover:bg-primary-600 shadow-lg hover:shadow-xl"
+                    ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:shadow-lg hover:shadow-primary-200"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 )}
               >
-                <Send className="w-5 h-5" />
-              </button>
+                {isTyping ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </motion.button>
             </form>
           </div>
         </div>
