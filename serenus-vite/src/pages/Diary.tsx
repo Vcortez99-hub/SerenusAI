@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Plus, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useAuth } from '../contexts/AuthContext'
 
 interface DiaryEntry {
   id: string
@@ -26,35 +27,7 @@ interface DiaryEntry {
   gratitude?: string[]
 }
 
-const mockEntries: DiaryEntry[] = [
-  {
-    id: '1',
-    date: new Date('2024-01-15'),
-    mood: 'happy',
-    title: 'Um dia produtivo',
-    content: 'Hoje consegui completar todas as tarefas que havia planejado. Me senti muito realizado e motivado para continuar trabalhando nos meus objetivos.',
-    tags: ['trabalho', 'produtividade', 'motivação'],
-    gratitude: ['Pela saúde', 'Pelo trabalho', 'Pela família']
-  },
-  {
-    id: '2',
-    date: new Date('2024-01-14'),
-    mood: 'neutral',
-    title: 'Reflexões sobre o futuro',
-    content: 'Passei o dia pensando sobre os próximos passos na minha carreira. Ainda não tenho certeza do caminho, mas sei que estou no processo certo.',
-    tags: ['carreira', 'reflexão', 'futuro'],
-    gratitude: ['Pelas oportunidades', 'Pelo aprendizado']
-  },
-  {
-    id: '3',
-    date: new Date('2024-01-13'),
-    mood: 'sad',
-    title: 'Dia desafiador',
-    content: 'Enfrentei algumas dificuldades hoje que me deixaram um pouco para baixo. Mas sei que isso faz parte do processo de crescimento.',
-    tags: ['desafios', 'crescimento', 'superação'],
-    gratitude: ['Pelo apoio dos amigos']
-  }
-]
+
 
 const moodIcons = {
   happy: { icon: Smile, color: 'text-green-500', bg: 'bg-green-100' },
@@ -69,11 +42,109 @@ const moodLabels = {
 }
 
 export default function Diary() {
-  const [entries] = useState<DiaryEntry[]>(mockEntries)
+  const { user } = useAuth()
+  const [entries, setEntries] = useState<DiaryEntry[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMood, setSelectedMood] = useState<string>('all')
-  const [, setShowNewEntryForm] = useState(false)
+  const [showNewEntryForm, setShowNewEntryForm] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
+  const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null)
+  const [newEntry, setNewEntry] = useState({
+    title: '',
+    content: '',
+    mood: 'neutral' as 'happy' | 'neutral' | 'sad',
+    tags: [] as string[],
+    gratitude: [] as string[]
+  })
+
+  // Carregar entradas do localStorage quando o usuário estiver disponível
+  useEffect(() => {
+    if (user) {
+      const diaryKey = `diary_entries_${user.id}`
+      const savedEntries = localStorage.getItem(diaryKey)
+      if (savedEntries) {
+        const parsedEntries = JSON.parse(savedEntries).map((entry: any) => ({
+          ...entry,
+          date: new Date(entry.date)
+        }))
+        setEntries(parsedEntries)
+      }
+    }
+  }, [user])
+
+  // Salvar entradas no localStorage
+  const saveEntries = (updatedEntries: DiaryEntry[]) => {
+    if (user) {
+      const diaryKey = `diary_entries_${user.id}`
+      localStorage.setItem(diaryKey, JSON.stringify(updatedEntries))
+      setEntries(updatedEntries)
+    }
+  }
+
+  // Adicionar nova entrada
+  const handleAddEntry = () => {
+    if (!newEntry.title.trim() || !newEntry.content.trim()) {
+      alert('Por favor, preencha o título e o conteúdo da entrada.')
+      return
+    }
+
+    const entry: DiaryEntry = {
+      id: Date.now().toString(),
+      date: new Date(),
+      title: newEntry.title,
+      content: newEntry.content,
+      mood: newEntry.mood,
+      tags: newEntry.tags,
+      gratitude: newEntry.gratitude
+    }
+
+    const updatedEntries = [entry, ...entries]
+    saveEntries(updatedEntries)
+    
+    // Resetar formulário
+    setNewEntry({
+      title: '',
+      content: '',
+      mood: 'neutral',
+      tags: [],
+      gratitude: []
+    })
+    setShowNewEntryForm(false)
+  }
+
+  // Excluir entrada
+  const handleDeleteEntry = (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+      const updatedEntries = entries.filter(entry => entry.id !== id)
+      saveEntries(updatedEntries)
+      setSelectedEntry(null)
+    }
+  }
+
+  // Iniciar edição
+  const startEditEntry = (entry: DiaryEntry) => {
+    setEditingEntry(entry)
+    setSelectedEntry(null)
+  }
+
+  // Salvar edição
+  const handleSaveEdit = () => {
+    if (!editingEntry || !editingEntry.title.trim() || !editingEntry.content.trim()) {
+      alert('Por favor, preencha o título e o conteúdo da entrada.')
+      return
+    }
+
+    const updatedEntries = entries.map(entry => 
+      entry.id === editingEntry.id ? editingEntry : entry
+    )
+    saveEntries(updatedEntries)
+    setEditingEntry(null)
+  }
+
+  // Cancelar edição
+  const cancelEdit = () => {
+    setEditingEntry(null)
+  }
 
   const filteredEntries = entries.filter(entry => {
     const matchesSearch = entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -229,10 +300,22 @@ export default function Diary() {
                     </button>
                     
                     <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-                        <Edit3 className="w-4 h-4" />
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          startEditEntry(selectedEntry)
+                        }}
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                      >
+                        <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteEntry(selectedEntry.id)
+                        }}
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -302,6 +385,13 @@ export default function Diary() {
                   <h2 className="text-xl font-semibold text-gray-900">
                     Suas Entradas ({filteredEntries.length})
                   </h2>
+                  <button
+                    onClick={() => setShowNewEntryForm(true)}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Entrada
+                  </button>
                 </div>
                 
                 <div className="grid gap-6">
@@ -383,9 +473,10 @@ export default function Diary() {
                       {!searchTerm && selectedMood === 'all' && (
                         <button
                           onClick={() => setShowNewEntryForm(true)}
-                          className="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          Criar Primeira Entrada
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Entrada
                         </button>
                       )}
                     </div>
@@ -396,6 +487,282 @@ export default function Diary() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Nova Entrada */}
+      <AnimatePresence>
+        {showNewEntryForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowNewEntryForm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Nova Entrada no Diário</h2>
+                <button
+                  onClick={() => setShowNewEntryForm(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Título */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={newEntry.title}
+                    onChange={(e) => setNewEntry({ ...newEntry, title: e.target.value })}
+                    placeholder="Como foi seu dia?"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Humor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Como você se sente?
+                  </label>
+                  <div className="flex space-x-4">
+                    {Object.entries(moodIcons).map(([mood, config]) => {
+                      const Icon = config.icon
+                      return (
+                        <button
+                          key={mood}
+                          type="button"
+                          onClick={() => setNewEntry({ ...newEntry, mood: mood as 'happy' | 'neutral' | 'sad' })}
+                          className={cn(
+                            "flex flex-col items-center p-3 rounded-lg border-2 transition-colors",
+                            newEntry.mood === mood
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          )}
+                        >
+                          <Icon className={cn("w-6 h-6 mb-1", config.color)} />
+                          <span className="text-xs text-gray-600">{moodLabels[mood as keyof typeof moodLabels]}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Conteúdo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Conte sobre seu dia
+                  </label>
+                  <textarea
+                    value={newEntry.content}
+                    onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
+                    placeholder="Descreva seus pensamentos, sentimentos e experiências..."
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="trabalho, família, saúde (separadas por vírgula)"
+                    onChange={(e) => {
+                      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
+                      setNewEntry({ ...newEntry, tags })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Gratidão */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gratidão (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Pelo que você é grato hoje? (separado por vírgula)"
+                    onChange={(e) => {
+                      const gratitude = e.target.value.split(',').map(item => item.trim()).filter(item => item)
+                      setNewEntry({ ...newEntry, gratitude })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Botões */}
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowNewEntryForm(false)}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleAddEntry}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Salvar Entrada
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+       </AnimatePresence>
+
+      {/* Modal de Edição de Entrada */}
+      <AnimatePresence>
+        {editingEntry && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={cancelEdit}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Editar Entrada</h2>
+                <button
+                  onClick={cancelEdit}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Título */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={editingEntry.title}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, title: e.target.value })}
+                    placeholder="Como foi seu dia?"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Humor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Como você se sente?
+                  </label>
+                  <div className="flex space-x-4">
+                    {Object.entries(moodIcons).map(([mood, config]) => {
+                      const Icon = config.icon
+                      return (
+                        <button
+                          key={mood}
+                          type="button"
+                          onClick={() => setEditingEntry({ ...editingEntry, mood: mood as 'happy' | 'neutral' | 'sad' })}
+                          className={cn(
+                            "flex flex-col items-center p-3 rounded-lg border-2 transition-colors",
+                            editingEntry.mood === mood
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          )}
+                        >
+                          <Icon className={cn("w-6 h-6 mb-1", config.color)} />
+                          <span className="text-xs text-gray-600">{moodLabels[mood as keyof typeof moodLabels]}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Conteúdo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Conte sobre seu dia
+                  </label>
+                  <textarea
+                    value={editingEntry.content}
+                    onChange={(e) => setEditingEntry({ ...editingEntry, content: e.target.value })}
+                    placeholder="Descreva seus pensamentos, sentimentos e experiências..."
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tags (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingEntry.tags.join(', ')}
+                    placeholder="trabalho, família, saúde (separadas por vírgula)"
+                    onChange={(e) => {
+                      const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag)
+                      setEditingEntry({ ...editingEntry, tags })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Gratidão */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gratidão (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingEntry.gratitude?.join(', ') || ''}
+                    placeholder="Pelo que você é grato hoje? (separado por vírgula)"
+                    onChange={(e) => {
+                      const gratitude = e.target.value.split(',').map(item => item.trim()).filter(item => item)
+                      setEditingEntry({ ...editingEntry, gratitude })
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Botões */}
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={cancelEdit}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Salvar Alterações
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
