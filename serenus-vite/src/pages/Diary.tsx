@@ -11,11 +11,14 @@ import {
   Trash2,
   BookOpen,
   TrendingUp,
-  Star
+  Star,
+  BarChart3,
+  Sparkles
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '../contexts/AuthContext'
+import { OpenAIService } from '../services/openai'
 
 interface DiaryEntry {
   id: string
@@ -48,6 +51,9 @@ export default function Diary() {
   const [selectedMood, setSelectedMood] = useState<string>('all')
   const [showNewEntryForm, setShowNewEntryForm] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<string>('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null)
   const [newEntry, setNewEntry] = useState({
     title: '',
@@ -168,6 +174,69 @@ export default function Diary() {
 
   const stats = getMoodStats()
 
+  // Função para gerar análise do diário
+  const generateDiaryAnalysis = async () => {
+    if (entries.length === 0) {
+      setAnalysisResult('Você ainda não possui entradas suficientes para uma análise completa. Continue registrando seus sentimentos e experiências para obter insights mais detalhados! 📝')
+      return
+    }
+
+    setIsAnalyzing(true)
+    
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+      if (!apiKey) {
+        throw new Error('API Key não configurada')
+      }
+
+      const openAIService = new OpenAIService(apiKey)
+      
+      // Preparar dados do diário para análise
+      const diaryData = entries.map(entry => ({
+        date: entry.date.toLocaleDateString('pt-BR'),
+        mood: moodLabels[entry.mood],
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags,
+        gratitude: entry.gratitude
+      }))
+
+      const analysisPrompt = `Como especialista em análise comportamental e bem-estar emocional, analise o diário emocional abaixo e forneça insights detalhados sobre:
+
+1. **Padrões Emocionais**: Identifique tendências de humor e momentos de picos altos/baixos
+2. **Gatilhos e Motivadores**: O que parece influenciar positiva ou negativamente o estado emocional
+3. **Evolução Temporal**: Como os sentimentos mudaram ao longo do tempo
+4. **Pontos de Atenção**: Aspectos que merecem cuidado ou acompanhamento
+5. **Recomendações**: Sugestões práticas para melhorar o bem-estar emocional
+
+Dados do diário (${entries.length} entradas):
+${JSON.stringify(diaryData, null, 2)}
+
+Estatísticas de humor:
+- Dias felizes: ${stats.happy}%
+- Dias neutros: ${stats.neutral}%
+- Dias tristes: ${stats.sad}%
+
+Forneça uma análise empática, construtiva e orientada para o crescimento pessoal. Use linguagem acolhedora e evite julgamentos.`
+
+      const analysis = await openAIService.generateResponse(analysisPrompt)
+      setAnalysisResult(analysis)
+    } catch (error) {
+      console.error('Erro ao gerar análise:', error)
+      setAnalysisResult('Não foi possível gerar a análise no momento. Tente novamente mais tarde ou verifique sua conexão com a internet. 🔄')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  // Função para abrir modal de análise
+  const handleOpenAnalysis = () => {
+    setShowAnalysisModal(true)
+    if (!analysisResult && !isAnalyzing) {
+      generateDiaryAnalysis()
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white">
       {/* Header */}
@@ -191,13 +260,29 @@ export default function Diary() {
               </div>
             </div>
             
-            <button
-              onClick={() => setShowNewEntryForm(true)}
-              className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nova Entrada</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                 onClick={handleOpenAnalysis}
+                 disabled={entries.length === 0}
+                 className={cn(
+                   "flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm",
+                   entries.length === 0
+                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                     : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                 )}
+               >
+                 <BarChart3 className="w-4 h-4" />
+                 <span>Análise do meu Diário</span>
+               </button>
+              
+              <button
+                onClick={() => setShowNewEntryForm(true)}
+                className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nova Entrada</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -756,6 +841,116 @@ export default function Diary() {
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Salvar Alterações
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Análise do Diário */}
+      <AnimatePresence>
+        {showAnalysisModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowAnalysisModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Análise do seu Diário</h2>
+                    <p className="text-sm text-gray-600">Insights baseados em {entries.length} entrada{entries.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAnalysisModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Estatísticas Rápidas */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600">{stats.happy}%</div>
+                    <div className="text-sm text-green-700">Dias Felizes</div>
+                  </div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{stats.neutral}%</div>
+                    <div className="text-sm text-yellow-700">Dias Neutros</div>
+                  </div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-red-600">{stats.sad}%</div>
+                    <div className="text-sm text-red-700">Dias Tristes</div>
+                  </div>
+                </div>
+
+                {/* Resultado da Análise */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    <h3 className="font-semibold text-gray-900">Análise Detalhada</h3>
+                  </div>
+                  
+                  {isAnalyzing ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Analisando seu diário...</p>
+                        <p className="text-sm text-gray-500 mt-2">Isso pode levar alguns segundos</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="prose prose-sm max-w-none">
+                      <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                        {analysisResult || 'Clique em "Gerar Nova Análise" para obter insights sobre seu diário.'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setAnalysisResult('')
+                      generateDiaryAnalysis()
+                    }}
+                    disabled={isAnalyzing || entries.length === 0}
+                    className={cn(
+                      "flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors",
+                      isAnalyzing || entries.length === 0
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-purple-600 text-white hover:bg-purple-700"
+                    )}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{isAnalyzing ? 'Analisando...' : 'Gerar Nova Análise'}</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowAnalysisModal(false)}
+                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Fechar
                   </button>
                 </div>
               </div>
