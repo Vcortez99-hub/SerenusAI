@@ -16,7 +16,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, formatTime, moodScoreToCategory, moodCategoryToScore, getMoodScoreLabel, convertDiaryMoodToDashboard, type MoodCategory, type MoodScore } from '@/lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { OpenAIService } from '../services/openai'
 
@@ -24,6 +24,7 @@ interface DiaryEntry {
   id: string
   date: Date
   mood: 'happy' | 'neutral' | 'sad'
+  moodScore?: MoodScore  // Compatibilidade com sistema numérico
   title: string
   content: string
   tags: string[]
@@ -44,6 +45,15 @@ const moodLabels = {
   sad: 'Triste'
 }
 
+// Mapeamento mais detalhado para melhor UX
+const moodOptions = [
+  { category: 'sad' as MoodCategory, score: 1, emoji: '😢', label: 'Muito triste' },
+  { category: 'sad' as MoodCategory, score: 2, emoji: '😔', label: 'Triste' },
+  { category: 'neutral' as MoodCategory, score: 3, emoji: '😐', label: 'Neutro' },
+  { category: 'happy' as MoodCategory, score: 4, emoji: '😊', label: 'Feliz' },
+  { category: 'happy' as MoodCategory, score: 5, emoji: '😄', label: 'Muito feliz' }
+]
+
 export default function Diary() {
   const { user } = useAuth()
   const [entries, setEntries] = useState<DiaryEntry[]>([])
@@ -59,6 +69,7 @@ export default function Diary() {
     title: '',
     content: '',
     mood: 'neutral' as 'happy' | 'neutral' | 'sad',
+    moodScore: 3 as MoodScore,
     tags: [] as string[],
     gratitude: [] as string[]
   })
@@ -69,20 +80,55 @@ export default function Diary() {
       const diaryKey = `diary_entries_${user.id}`
       const savedEntries = localStorage.getItem(diaryKey)
       if (savedEntries) {
-        const parsedEntries = JSON.parse(savedEntries).map((entry: any) => ({
-          ...entry,
-          date: new Date(entry.date)
-        }))
+        const parsedEntries = JSON.parse(savedEntries).map((entry: any) => {
+          // Garantir compatibilidade com entradas antigas
+          const moodScore = entry.moodScore || moodCategoryToScore(entry.mood)
+          return {
+            ...entry,
+            date: new Date(entry.date),
+            moodScore: moodScore
+          }
+        })
         setEntries(parsedEntries)
+        
+        // Salvar novamente para atualizar entradas antigas
+        if (parsedEntries.some((entry: any) => !entry.moodScore)) {
+          saveEntries(parsedEntries)
+        }
       }
     }
   }, [user])
 
-  // Salvar entradas no localStorage
+  // Salvar entradas no localStorage e sincronizar com Dashboard
   const saveEntries = (updatedEntries: DiaryEntry[]) => {
     if (user) {
       const diaryKey = `diary_entries_${user.id}`
       localStorage.setItem(diaryKey, JSON.stringify(updatedEntries))
+      
+      // Sincronizar com dados do Dashboard
+      const userDataKey = `user_data_${user.id}`
+      const savedUserData = localStorage.getItem(userDataKey)
+      if (savedUserData) {
+        const userData = JSON.parse(savedUserData)
+        
+        // Atualizar histórico de humor no Dashboard
+        const moodHistory = updatedEntries.map(entry => {
+          const diaryMoodScore = entry.moodScore || moodCategoryToScore(entry.mood)
+          return {
+            date: entry.date.toISOString().split('T')[0],
+            mood: convertDiaryMoodToDashboard(diaryMoodScore),
+            time: entry.date.toTimeString().slice(0, 5)
+          }
+        })
+        
+        const updatedUserData = {
+          ...userData,
+          moodHistory: moodHistory
+        }
+        
+        localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
+      }
+      
       setEntries(updatedEntries)
     }
   }
@@ -94,12 +140,14 @@ export default function Diary() {
       return
     }
 
+    const moodScore = moodCategoryToScore(newEntry.mood)
     const entry: DiaryEntry = {
       id: Date.now().toString(),
       date: new Date(),
       title: newEntry.title,
       content: newEntry.content,
       mood: newEntry.mood,
+      moodScore: moodScore,
       tags: newEntry.tags,
       gratitude: newEntry.gratitude
     }
@@ -112,6 +160,7 @@ export default function Diary() {
       title: '',
       content: '',
       mood: 'neutral',
+      moodScore: 3,
       tags: [],
       gratitude: []
     })
@@ -140,8 +189,14 @@ export default function Diary() {
       return
     }
 
+    const moodScore = moodCategoryToScore(editingEntry.mood)
+    const updatedEntry = {
+      ...editingEntry,
+      moodScore: moodScore
+    }
+
     const updatedEntries = entries.map(entry => 
-      entry.id === editingEntry.id ? editingEntry : entry
+      entry.id === editingEntry.id ? updatedEntry : entry
     )
     saveEntries(updatedEntries)
     setEditingEntry(null)
@@ -620,26 +675,27 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Como você se sente?
                   </label>
-                  <div className="flex space-x-4">
-                    {Object.entries(moodIcons).map(([mood, config]) => {
-                      const Icon = config.icon
-                      return (
-                        <button
-                          key={mood}
-                          type="button"
-                          onClick={() => setNewEntry({ ...newEntry, mood: mood as 'happy' | 'neutral' | 'sad' })}
-                          className={cn(
-                            "flex flex-col items-center p-3 rounded-lg border-2 transition-colors",
-                            newEntry.mood === mood
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          )}
-                        >
-                          <Icon className={cn("w-6 h-6 mb-1", config.color)} />
-                          <span className="text-xs text-gray-600">{moodLabels[mood as keyof typeof moodLabels]}</span>
-                        </button>
-                      )
-                    })}
+                  <div className="grid grid-cols-5 gap-3">
+                    {moodOptions.map((option) => (
+                      <button
+                        key={option.score}
+                        type="button"
+                        onClick={() => setNewEntry({ 
+                          ...newEntry, 
+                          mood: option.category,
+                          moodScore: option.score
+                        })}
+                        className={cn(
+                          "flex flex-col items-center p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105",
+                          newEntry.moodScore === option.score
+                            ? "border-blue-500 bg-blue-50 scale-105 shadow-lg"
+                            : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        )}
+                      >
+                        <span className="text-2xl mb-1">{option.emoji}</span>
+                        <span className="text-xs text-gray-600 font-medium text-center">{option.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -757,26 +813,27 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Como você se sente?
                   </label>
-                  <div className="flex space-x-4">
-                    {Object.entries(moodIcons).map(([mood, config]) => {
-                      const Icon = config.icon
-                      return (
-                        <button
-                          key={mood}
-                          type="button"
-                          onClick={() => setEditingEntry({ ...editingEntry, mood: mood as 'happy' | 'neutral' | 'sad' })}
-                          className={cn(
-                            "flex flex-col items-center p-3 rounded-lg border-2 transition-colors",
-                            editingEntry.mood === mood
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 hover:border-gray-300"
-                          )}
-                        >
-                          <Icon className={cn("w-6 h-6 mb-1", config.color)} />
-                          <span className="text-xs text-gray-600">{moodLabels[mood as keyof typeof moodLabels]}</span>
-                        </button>
-                      )
-                    })}
+                  <div className="grid grid-cols-5 gap-3">
+                    {moodOptions.map((option) => (
+                      <button
+                        key={option.score}
+                        type="button"
+                        onClick={() => setEditingEntry({ 
+                          ...editingEntry, 
+                          mood: option.category,
+                          moodScore: option.score
+                        })}
+                        className={cn(
+                          "flex flex-col items-center p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105",
+                          editingEntry.moodScore === option.score
+                            ? "border-blue-500 bg-blue-50 scale-105 shadow-lg"
+                            : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+                        )}
+                      >
+                        <span className="text-2xl mb-1">{option.emoji}</span>
+                        <span className="text-xs text-gray-600 font-medium text-center">{option.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

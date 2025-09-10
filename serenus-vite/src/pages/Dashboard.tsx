@@ -90,21 +90,32 @@ export default function Dashboard() {
     if (savedData) {
       const data = JSON.parse(savedData)
       
+      // Migrar dados antigos: aceitar valores 1-5 (escala atual) e 6-10 (escala antiga)
+      const validMoodHistory = (data.moodHistory || []).filter((entry: any) => {
+        return entry.mood >= 1 && entry.mood <= 10
+      })
+      
       // Calcular progresso semanal real
-      const weeklyProgress = calculateWeeklyProgress(activities, data.moodHistory || [])
+      const weeklyProgress = calculateWeeklyProgress(activities, validMoodHistory)
       const currentStreak = calculateCurrentStreak(activities)
       
-      setUserData({
+      const migratedData = {
         ...data,
+        moodHistory: validMoodHistory,
         weeklyProgress,
         currentStreak,
         totalSessions: activities.filter((a: any) => a.completed).length
-      })
+      }
       
-      // Verificar se já registrou humor hoje
+      // Salvar dados migrados de volta no localStorage
+      localStorage.setItem(userDataKey, JSON.stringify(migratedData))
+      
+      setUserData(migratedData)
+      
+      // Verificar se já registrou humor hoje e restaurar o valor
       const today = new Date().toISOString().split('T')[0]
-      if (data.lastMoodUpdate === today) {
-        setMoodToday(data.moodToday)
+      if (migratedData.lastMoodUpdate === today && migratedData.moodToday) {
+        setMoodToday(migratedData.moodToday)
       }
     }
   }, [user, navigate])
@@ -123,6 +134,10 @@ export default function Dashboard() {
     const now = new Date()
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
     
+    // Verificar se já existe registro para hoje
+    const existingTodayEntry = userData.moodHistory.find(entry => entry.date === today)
+    const isUpdatingToday = !!existingTodayEntry
+    
     const updatedUserData = {
       ...userData,
       moodToday: moodToday,
@@ -131,7 +146,8 @@ export default function Dashboard() {
         ...userData.moodHistory.filter(entry => entry.date !== today),
         { date: today, mood: moodToday, time }
       ],
-      currentStreak: userData.currentStreak + 1
+      // Só incrementar streak se for um novo dia, não uma atualização
+      currentStreak: isUpdatingToday ? userData.currentStreak : userData.currentStreak + 1
     }
     
     setUserData(updatedUserData)
@@ -142,7 +158,7 @@ export default function Dashboard() {
       localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
     }
 
-    alert('Humor registrado com sucesso! ✨')
+    alert(isUpdatingToday ? 'Humor atualizado com sucesso! ✨' : 'Humor registrado com sucesso! ✨')
   }
 
   const addCustomExercise = () => {
