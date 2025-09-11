@@ -38,6 +38,12 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.5s ease;
+}
+
+/* Classe para efeito de folhas ativo */
+body.leaves-effect {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Serenus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .status {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            color: #059669;
+        }
+        .error {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 Teste da Aplicação Serenus</h1>
+        <p>Esta é uma página de teste para verificar se o servidor está funcionando corretamente.</p>
+        
+        <div class="status">
+            <h2>Status dos Serviços:</h2>
+            <ul>
+                <li class="success">✅ Servidor Frontend (Vite) - Funcionando</li>
+                <li class="success">✅ HTML/CSS - Funcionando</li>
+                <li id="backend-status">🔄 Testando Backend...</li>
+            </ul>
+        </div>
+        
+        <div class="status">
+            <h2>Próximos Passos:</h2>
+            <ol>
+                <li>Verificar se esta página carrega corretamente</li>
+                <li>Testar a aplicação React principal</li>
+                <li>Verificar logs do console</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        // Testar conexão com o backend
+        fetch('http://localhost:3001/api/health')
+            .then(response => {
+                const statusElement = document.getElementById('backend-status');
+                if (response.ok) {
+                    statusElement.innerHTML = '✅ Backend - Funcionando';
+                    statusElement.className = 'success';
+                } else {
+                    statusElement.innerHTML = '⚠️ Backend - Resposta com erro';
+                    statusElement.className = 'error';
+                }
+            })
+            .catch(error => {
+                const statusElement = document.getElementById('backend-status');
+                statusElement.innerHTML = '❌ Backend - Não conectado';
+                statusElement.className = 'error';
+                console.error('Erro ao conectar com backend:', error);
+            });
+    </script>
+</body>
+</html>

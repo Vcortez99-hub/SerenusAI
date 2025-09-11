@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # Aplicação React (Vite)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - db
+      - redis
+    networks:
+      - serenus-network
+    stdin_open: true
+    tty: true
+
+  # Banco de dados PostgreSQL
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: serenus_dev
+      POSTGRES_USER: serenus
+      POSTGRES_PASSWORD: serenus_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db:/docker-entrypoint-initdb.d
+    networks:
+      - serenus-network
+
+  # Redis para cache e sessões
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - serenus-network
+    command: redis-server --appendonly yes
+
+  # Adminer para gerenciamento do banco
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - serenus-network
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+  # Mailhog para desenvolvimento de emails
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - serenus-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  serenus-network:
+    driver: bridge

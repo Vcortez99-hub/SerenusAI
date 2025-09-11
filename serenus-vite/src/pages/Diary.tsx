@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom'
 import { cn, formatDate, formatTime, moodScoreToCategory, moodCategoryToScore, getMoodScoreLabel, convertDiaryMoodToDashboard, type MoodCategory, type MoodScore } from '@/lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { OpenAIService } from '../services/openai'
+import { diaryApiService, type WhatsAppDiaryEntry } from '../services/diary-api'
 
 interface DiaryEntry {
   id: string
@@ -29,6 +30,10 @@ interface DiaryEntry {
   content: string
   tags: string[]
   gratitude?: string[]
+  source?: 'local' | 'whatsapp'  // Origem da entrada
+  whatsappNumber?: string  // Número do WhatsApp (se aplicável)
+  createdAt?: string
+  updatedAt?: string
 }
 
 
@@ -65,6 +70,8 @@ export default function Diary() {
   const [analysisResult, setAnalysisResult] = useState<string>('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null)
+  const [isLoadingWhatsApp, setIsLoadingWhatsApp] = useState(false)
+  const [whatsappError, setWhatsappError] = useState<string | null>(null)
   const [newEntry, setNewEntry] = useState({
     title: '',
     content: '',
@@ -74,38 +81,91 @@ export default function Diary() {
     gratitude: [] as string[]
   })
 
-  // Carregar entradas do localStorage quando o usuário estiver disponível
+  // Carregar entradas do localStorage e WhatsApp quando o usuário estiver disponível
   useEffect(() => {
     if (user) {
+      loadAllEntries()
+    }
+  }, [user])
+
+  // Função para carregar todas as entradas (localStorage + WhatsApp)
+  const loadAllEntries = async () => {
+    if (!user) return
+
+    try {
+      // Carregar entradas locais do localStorage
       const diaryKey = `diary_entries_${user.id}`
       const savedEntries = localStorage.getItem(diaryKey)
+      let localEntries: DiaryEntry[] = []
+      
       if (savedEntries) {
-        const parsedEntries = JSON.parse(savedEntries).map((entry: any) => {
-          // Garantir compatibilidade com entradas antigas
+        localEntries = JSON.parse(savedEntries).map((entry: any) => {
           const moodScore = entry.moodScore || moodCategoryToScore(entry.mood)
           return {
             ...entry,
             date: new Date(entry.date),
-            moodScore: moodScore
+            moodScore: moodScore,
+            source: 'local'
           }
         })
-        setEntries(parsedEntries)
-        
-        // Salvar novamente para atualizar entradas antigas
-        if (parsedEntries.some((entry: any) => !entry.moodScore)) {
-          saveEntries(parsedEntries)
-        }
       }
-    }
-  }, [user])
 
-  // Salvar entradas no localStorage e sincronizar com Dashboard
-  const saveEntries = (updatedEntries: DiaryEntry[]) => {
+      // Carregar entradas do WhatsApp
+      setIsLoadingWhatsApp(true)
+      setWhatsappError(null)
+      
+      try {
+        const whatsappEntries = await diaryApiService.getAllEntries()
+        const convertedWhatsAppEntries = whatsappEntries.map(entry => {
+          const converted = diaryApiService.convertToFrontendEntry(entry)
+          return {
+            ...converted,
+            source: 'whatsapp' as const
+          }
+        })
+
+        // Combinar entradas locais e do WhatsApp
+        const allEntries = [...localEntries, ...convertedWhatsAppEntries]
+        
+        // Ordenar por data (mais recente primeiro)
+        allEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        
+        setEntries(allEntries)
+        
+        // Salvar entradas locais atualizadas se necessário
+        if (localEntries.some((entry: any) => !entry.moodScore)) {
+          saveLocalEntries(localEntries)
+        }
+      } catch (whatsappError) {
+        console.warn('Erro ao carregar entradas do WhatsApp:', whatsappError)
+        setWhatsappError('Não foi possível carregar mensagens do WhatsApp')
+        
+        // Usar apenas entradas locais em caso de erro
+        setEntries(localEntries)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar entradas:', error)
+    } finally {
+      setIsLoadingWhatsApp(false)
+    }
+  }
+
+  // Salvar apenas entradas locais no localStorage
+  const saveLocalEntries = (localEntries: DiaryEntry[]) => {
     if (user) {
       const diaryKey = `diary_entries_${user.id}`
-      localStorage.setItem(diaryKey, JSON.stringify(updatedEntries))
+      const localOnlyEntries = localEntries.filter(entry => entry.source === 'local')
+      localStorage.setItem(diaryKey, JSON.stringify(localOnlyEntries))
+    }
+  }
+
+  // Salvar entradas e sincronizar com Dashboard
+  const saveEntries = (updatedEntries: DiaryEntry[]) => {
+    if (user) {
+      // Salvar apenas entradas locais no localStorage
+      saveLocalEntries(updatedEntries)
       
-      // Sincronizar com dados do Dashboard
+      // Sincronizar com dados do Dashboard (todas as entradas)
       const userDataKey = `user_data_${user.id}`
       const savedUserData = localStorage.getItem(userDataKey)
       if (savedUserData) {
@@ -316,6 +376,42 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
             </div>
             
             <div className="flex items-center space-x-3">
+              {/* Status do WhatsApp */}
+              <div className="flex items-center space-x-2 text-sm">
+                {isLoadingWhatsApp ? (
+                  <div className="flex items-center space-x-2 text-blue-600">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <span>Carregando WhatsApp...</span>
+                  </div>
+                ) : whatsappError ? (
+                  <div className="flex items-center space-x-2 text-red-600">
+                    <div className="w-2 h-2 bg-red-500 rounded-full" />
+                    <span>WhatsApp offline</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span>WhatsApp conectado</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Botão de recarregar WhatsApp */}
+              <button
+                onClick={loadAllEntries}
+                disabled={isLoadingWhatsApp}
+                className={cn(
+                  "flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+                  isLoadingWhatsApp
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                )}
+                title="Recarregar mensagens do WhatsApp"
+              >
+                <Sparkles className={cn("w-4 h-4", isLoadingWhatsApp && "animate-spin")} />
+                <span>Atualizar</span>
+              </button>
+
               <button
                  onClick={handleOpenAnalysis}
                  disabled={entries.length === 0}
@@ -558,7 +654,15 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                             
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-gray-900 truncate">{entry.title}</h3>
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                  <h3 className="font-semibold text-gray-900 truncate">{entry.title}</h3>
+                                  {entry.source === 'whatsapp' && (
+                                    <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium flex-shrink-0">
+                                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                                      <span>WhatsApp</span>
+                                    </div>
+                                  )}
+                                </div>
                                 <span className="text-sm text-gray-500 flex-shrink-0">
                                   {entry.date.toLocaleDateString('pt-BR')}
                                 </span>

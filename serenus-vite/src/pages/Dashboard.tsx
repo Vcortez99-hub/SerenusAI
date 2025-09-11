@@ -429,6 +429,13 @@ export default function Dashboard() {
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Chat IA
               </Link>
+              <Link 
+                to="/plans"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+              >
+                <span className="mr-2">💎</span>
+                Planos
+              </Link>
               <button className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
                 Configurações
               </button>
