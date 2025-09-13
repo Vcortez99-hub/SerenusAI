@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
+import MentalHealthAssessment, { MentalHealthData, calculateWellnessScore } from '@/components/MentalHealthAssessment'
 
 interface OnboardingStep {
   id: number
@@ -25,6 +26,12 @@ interface UserData {
     privacy: 'public' | 'private'
     reminderTime: string
   }
+  mentalHealthData: MentalHealthData
+  wellnessScore?: {
+    overallScore: number
+    riskLevel: 'low' | 'moderate' | 'high'
+    recommendations: string[]
+  }
 }
 
 const initialUserData: UserData = {
@@ -36,17 +43,24 @@ const initialUserData: UserData = {
     notifications: true,
     privacy: 'private',
     reminderTime: '20:00'
+  },
+  mentalHealthData: {
+    currentMood: 3,
+    stressLevel: 3,
+    sleepQuality: 3,
+    socialSupport: 3,
+    workLifeBalance: 3,
+    anxietyLevel: 3,
+    energyLevel: 3,
+    copingStrategies: [],
+    mainConcerns: [],
+    previousExperience: '',
+    goals: [],
+    preferredSupport: []
   }
 }
 
-const goalOptions = [
-  { id: 'anxiety', label: 'Reduzir ansiedade' },
-  { id: 'mood', label: 'Melhorar humor' },
-  { id: 'stress', label: 'Gerenciar estresse' },
-  { id: 'sleep', label: 'Melhorar sono' },
-  { id: 'mindfulness', label: 'Praticar mindfulness' },
-  { id: 'relationships', label: 'Fortalecer relacionamentos' }
-]
+
 
 // Move components outside to prevent re-creation on each render
 interface AccountStepProps {
@@ -110,65 +124,7 @@ const AccountStep = ({ userData, updateUserData }: AccountStepProps) => (
   </div>
 )
 
-interface GoalsStepProps {
-  userData: UserData
-  toggleGoal: (goalId: string) => void
-}
 
-const GoalsStep = ({ userData, toggleGoal }: GoalsStepProps) => (
-  <div className="max-w-2xl mx-auto">
-    <div className="text-center mb-8">
-      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span className="text-2xl">🎯</span>
-      </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Quais são seus objetivos?</h2>
-      <p className="text-gray-600">Selecione as áreas que você gostaria de melhorar</p>
-    </div>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {goalOptions.map((goal) => {
-        const isSelected = userData.goals.includes(goal.id)
-        
-        return (
-          <button
-            key={goal.id}
-            onClick={() => toggleGoal(goal.id)}
-            className={cn(
-              "p-4 rounded-xl border-2 transition-all duration-200 text-left",
-              isSelected
-                ? "border-primary-500 bg-primary-50"
-                : "border-gray-200 hover:border-gray-300 bg-white"
-            )}
-          >
-            <div className="flex items-center space-x-3">
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center",
-                isSelected ? "bg-primary-500" : "bg-gray-100"
-              )}>
-                <span className={cn(
-                  "text-lg",
-                  isSelected ? "text-white" : "text-gray-600"
-                )}>
-                  {goal.id === 'anxiety' ? '🧠' : 
-                   goal.id === 'mood' ? '❤️' :
-                   goal.id === 'stress' ? '🎯' :
-                   goal.id === 'sleep' ? '📅' :
-                   goal.id === 'mindfulness' ? '✨' : '❤️'}
-                </span>
-              </div>
-              <span className={cn(
-                "font-medium",
-                isSelected ? "text-primary-700" : "text-gray-700"
-              )}>
-                {goal.label}
-              </span>
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  </div>
-)
 
 interface PreferencesStepProps {
   userData: UserData
@@ -182,7 +138,7 @@ const PreferencesStep = ({ userData, updateUserData }: PreferencesStepProps) => 
         <span className="text-2xl">🔔</span>
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">Preferências</h2>
-      <p className="text-gray-600">Configure como você quer usar o Serenus</p>
+      <p className="text-gray-600">Configure como você quer usar o EssentIA</p>
     </div>
     
     <div className="space-y-6">
@@ -258,7 +214,7 @@ const WelcomeStep = () => (
     <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mx-auto mb-6">
       <span className="text-3xl">🌟</span>
     </div>
-    <h2 className="text-3xl font-bold text-gray-900 mb-4">Bem-vindo ao Serenus</h2>
+    <h2 className="text-3xl font-bold text-gray-900 mb-4">Bem-vindo ao EssentIA</h2>
     <p className="text-lg text-gray-600 mb-8">
       Sua jornada para o bem-estar mental começa aqui. Vamos configurar sua experiência personalizada.
     </p>
@@ -328,7 +284,9 @@ export default function Onboarding() {
         email: userData.email,
         password: userData.password,
         goals: userData.goals,
-        preferences: userData.preferences
+        preferences: userData.preferences,
+        mentalHealthData: userData.mentalHealthData,
+        wellnessScore: userData.wellnessScore
       })
       
       if (success) {
@@ -343,21 +301,54 @@ export default function Onboarding() {
     }
   }
 
-  const toggleGoal = (goalId: string) => {
-    setUserData(prev => ({
-      ...prev,
-      goals: prev.goals.includes(goalId)
-        ? prev.goals.filter(g => g !== goalId)
-        : [...prev.goals, goalId]
-    }))
-  }
+
 
   // Componentes já movidos para fora da função principal
+  const [mentalHealthStep, setMentalHealthStep] = useState(1)
+  
+  const updateMentalHealthData = (updates: Partial<MentalHealthData>) => {
+    setUserData(prev => ({
+      ...prev,
+      mentalHealthData: { ...prev.mentalHealthData, ...updates }
+    }))
+  }
+  
+  const nextMentalHealthStep = () => {
+    if (mentalHealthStep < 4) {
+      setMentalHealthStep(prev => prev + 1)
+    } else {
+      // Calcular pontuação de bem-estar ao finalizar avaliação
+      const wellnessScore = calculateWellnessScore(userData.mentalHealthData)
+      setUserData(prev => ({ ...prev, wellnessScore }))
+      nextStep()
+    }
+  }
+  
+  const prevMentalHealthStep = () => {
+    if (mentalHealthStep > 1) {
+      setMentalHealthStep(prev => prev - 1)
+    } else {
+      prevStep()
+    }
+  }
 
   const steps: OnboardingStep[] = [
-    { id: 1, title: 'Bem-vindo', description: 'Conheça o Serenus', component: <WelcomeStep /> },
+    { id: 1, title: 'Bem-vindo', description: 'Conheça o EssentIA', component: <WelcomeStep /> },
     { id: 2, title: 'Conta', description: 'Crie sua conta', component: <AccountStep userData={userData} updateUserData={updateUserData} /> },
-    { id: 3, title: 'Objetivos', description: 'Defina suas metas', component: <GoalsStep userData={userData} toggleGoal={toggleGoal} /> },
+    { 
+      id: 3, 
+      title: 'Avaliação', 
+      description: 'Panorama de saúde mental', 
+      component: (
+        <MentalHealthAssessment
+          data={userData.mentalHealthData}
+          onUpdate={updateMentalHealthData}
+          currentStep={mentalHealthStep}
+          onNext={nextMentalHealthStep}
+          onPrev={prevMentalHealthStep}
+        />
+      )
+    },
     { id: 4, title: 'Preferências', description: 'Configure sua experiência', component: <PreferencesStep userData={userData} updateUserData={updateUserData} /> }
   ]
 
@@ -366,49 +357,64 @@ export default function Onboarding() {
       case 2:
         return userData.name && userData.email && userData.password.length >= 8
       case 3:
-        return userData.goals.length > 0
+        // Para a avaliação de saúde mental, sempre permitir navegação
+        return true
       default:
         return true
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden flex flex-col">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-96 h-96 bg-gradient-to-r from-blue-400/15 to-purple-400/15 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-10 right-10 w-80 h-80 bg-gradient-to-r from-purple-400/15 to-pink-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-gradient-to-r from-green-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute bottom-1/3 left-1/4 w-72 h-72 bg-gradient-to-r from-pink-400/10 to-yellow-400/10 rounded-full blur-3xl animate-pulse delay-700"></div>
+      </div>
+      
       {/* Progress Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-lg font-semibold text-gray-900">Configuração inicial</h1>
-            <span className="text-sm text-gray-600">{currentStep} de {steps.length}</span>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">Configuração inicial</h1>
+            <span className="text-sm text-gray-600 bg-white/50 px-3 py-1 rounded-full">{currentStep} de {steps.length}</span>
           </div>
           
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200/50 rounded-full h-3 shadow-inner">
             <div 
-              className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full transition-all duration-700 shadow-lg relative overflow-hidden"
               style={{ width: `${(currentStep / steps.length) * 100}%` }}
-            />
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-pulse"></div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
         <div className="w-full max-w-4xl">
           {/* Error Message */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-center"
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-red-50/90 backdrop-blur border border-red-200/50 text-red-700 px-6 py-4 rounded-2xl mb-8 text-center shadow-lg"
             >
-              {error}
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="font-medium">{error}</span>
+              </div>
               {error.includes('já está cadastrado') && (
-                <div className="mt-2">
+                <div className="mt-3">
                   <a
                     href="/login"
-                    className="text-primary-500 hover:text-primary-600 font-medium underline"
+                    className="text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 relative group"
                   >
                     Fazer login
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
                   </a>
                 </div>
               )}
@@ -421,70 +427,88 @@ export default function Onboarding() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 md:p-12"
+              transition={{ duration: 0.4 }}
+              className="bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 md:p-12 relative overflow-hidden"
             >
-              {steps[currentStep - 1].component}
+              {/* Decorative Elements */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-blue-500/8 to-transparent rounded-full -translate-y-20 translate-x-20"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-purple-500/8 to-transparent rounded-full translate-y-16 -translate-x-16"></div>
+              
+              <div className="relative z-10">
+                {steps[currentStep - 1].component}
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="bg-white border-t border-gray-200">
+      <div className="relative z-10 bg-white/80 backdrop-blur-xl border-t border-white/20 shadow-lg">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
-            <button
+            <motion.button
               onClick={prevStep}
               disabled={currentStep === 1}
+              whileHover={{ scale: currentStep === 1 ? 1 : 1.02 }}
+              whileTap={{ scale: currentStep === 1 ? 1 : 0.98 }}
               className={cn(
-                "flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors",
+                "flex items-center space-x-2 px-8 py-4 rounded-xl font-semibold transition-all duration-200 backdrop-blur-sm",
                 currentStep === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "text-gray-400 cursor-not-allowed bg-gray-100/50"
+                  : "text-gray-700 hover:text-gray-900 bg-white/60 hover:bg-white/80 shadow-lg hover:shadow-xl border border-white/30"
               )}
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5" />
               <span>Anterior</span>
-            </button>
+            </motion.button>
             
             {currentStep === steps.length ? (
-              <button
+              <motion.button
                 onClick={handleComplete}
                 disabled={!canProceed() || isLoading}
+                whileHover={{ scale: (!canProceed() || isLoading) ? 1 : 1.02 }}
+                whileTap={{ scale: (!canProceed() || isLoading) ? 1 : 0.98 }}
                 className={cn(
-                  "flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all",
+                  "flex items-center space-x-3 px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg relative overflow-hidden group",
                   canProceed() && !isLoading
-                    ? "bg-primary-500 text-white hover:bg-primary-600 shadow-lg hover:shadow-xl"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    ? "bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 text-white hover:shadow-xl hover:shadow-green-500/25"
+                    : "bg-gray-300/80 text-gray-500 cursor-not-allowed backdrop-blur-sm"
                 )}
               >
-                {isLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Configurando...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Começar jornada</span>
-                    <span className="text-lg">✨</span>
-                  </>
-                )}
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center space-x-3">
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Configurando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Começar jornada</span>
+                      <span className="text-xl animate-pulse">✨</span>
+                    </>
+                  )}
+                </div>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
                 onClick={nextStep}
                 disabled={!canProceed()}
+                whileHover={{ scale: !canProceed() ? 1 : 1.02 }}
+                whileTap={{ scale: !canProceed() ? 1 : 0.98 }}
                 className={cn(
-                  "flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all",
+                  "flex items-center space-x-2 px-8 py-4 rounded-xl font-semibold transition-all duration-300 shadow-lg relative overflow-hidden group",
                   canProceed()
-                    ? "bg-primary-500 text-white hover:bg-primary-600 shadow-lg hover:shadow-xl"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white hover:shadow-xl hover:shadow-blue-500/25"
+                    : "bg-gray-300/80 text-gray-500 cursor-not-allowed backdrop-blur-sm"
                 )}
               >
-                <span>Próximo</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center space-x-2">
+                  <span>Próximo</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </motion.button>
             )}
           </div>
         </div>

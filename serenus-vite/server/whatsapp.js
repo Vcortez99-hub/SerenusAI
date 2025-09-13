@@ -62,7 +62,7 @@ class WhatsAppService {
    * @param {string} entryPreview - Prévia da entrada do diário
    */
   async sendDiaryConfirmation(to, entryPreview) {
-    const confirmationMessage = `✅ *Entrada salva no seu diário!*\n\n📝 Prévia: "${entryPreview.substring(0, 100)}${entryPreview.length > 100 ? '...' : ''}"\n\n🕐 Salvo em: ${new Date().toLocaleString('pt-BR')}\n\nObrigado por usar o Serenus! 🌟`;
+    const confirmationMessage = `✅ *Entrada salva no seu diário!*\n\n📝 Prévia: "${entryPreview.substring(0, 100)}${entryPreview.length > 100 ? '...' : ''}"\n\n🕐 Salvo em: ${new Date().toLocaleString('pt-BR')}\n\nObrigado por usar o EssentIA! 🌟`;
     
     return await this.sendTextMessage(to, confirmationMessage);
   }
@@ -77,7 +77,7 @@ class WhatsAppService {
     const emoji = this.sentimentAnalysis.getSentimentEmoji(sentimentResult.sentiment);
     const confidencePercent = (sentimentResult.confidence * 100).toFixed(0);
     
-    const confirmationMessage = `✅ *Entrada salva no seu diário!*\n\n📝 Prévia: "${entryPreview.substring(0, 80)}${entryPreview.length > 80 ? '...' : ''}"\n\n${emoji} *Sentimento detectado:* ${sentimentResult.sentiment.toUpperCase()} (${confidencePercent}%)\n💭 ${sentimentResult.explanation}\n\n🕐 Salvo em: ${new Date().toLocaleString('pt-BR')}\n\nObrigado por usar o Serenus! 🌟`;
+    const confirmationMessage = `✅ *Entrada salva no seu diário!*\n\n📝 Prévia: "${entryPreview.substring(0, 80)}${entryPreview.length > 80 ? '...' : ''}"\n\n${emoji} *Sentimento detectado:* ${sentimentResult.sentiment.toUpperCase()} (${confidencePercent}%)\n💭 ${sentimentResult.explanation}\n\n🕐 Salvo em: ${new Date().toLocaleString('pt-BR')}\n\nObrigado por usar o EssentIA! 🌟`;
     
     return await this.sendTextMessage(to, confirmationMessage);
   }
@@ -87,7 +87,7 @@ class WhatsAppService {
    * @param {string} to - Número do destinatário
    */
   async sendWelcomeMessage(to) {
-    const welcomeMessage = `🌟 *Bem-vindo ao Serenus!*\n\nAgora você pode escrever em seu diário pessoal diretamente pelo WhatsApp!\n\n📝 *Como usar:*\n• Envie qualquer mensagem de texto\n• Ela será automaticamente salva como uma entrada do seu diário\n• Você receberá uma confirmação a cada entrada\n\n✨ Comece agora mesmo escrevendo sobre seu dia!`;
+    const welcomeMessage = `🌟 *Bem-vindo ao EssentIA!*\n\nAgora você pode escrever em seu diário pessoal diretamente pelo WhatsApp!\n\n📝 *Como usar:*\n• Envie qualquer mensagem de texto\n• Ela será automaticamente salva como uma entrada do seu diário\n• Você receberá uma confirmação a cada entrada\n\n✨ Comece agora mesmo escrevendo sobre seu dia!`;
     
     return await this.sendTextMessage(to, welcomeMessage);
   }
@@ -106,7 +106,7 @@ class WhatsAppService {
    * @param {string} to - Número do destinatário
    */
   async sendUnauthorizedMessage(to) {
-    const unauthorizedMessage = `🔒 *Acesso Não Autorizado*\n\nDesculpe, este número não está autorizado a usar o Serenus.\n\n📞 *Seu número:* ${to}\n\nPara solicitar acesso, entre em contato com o administrador do sistema.\n\n⚠️ Esta tentativa foi registrada por segurança.`;
+    const unauthorizedMessage = `🔒 *Acesso Não Autorizado*\n\nDesculpe, este número não está autorizado a usar o EssentIA.\n\n📞 *Seu número:* ${to}\n\nPara solicitar acesso, entre em contato com o administrador do sistema.\n\n⚠️ Esta tentativa foi registrada por segurança.`;
     
     return await this.sendTextMessage(to, unauthorizedMessage);
   }
@@ -116,7 +116,7 @@ class WhatsAppService {
    * @param {string} to - Número do destinatário
    */
   async sendAuthorizationRequest(to) {
-    const authMessage = `🔐 *Solicitação de Autorização*\n\nOlá! Vejo que você está tentando usar o Serenus pela primeira vez.\n\n📞 *Seu número:* ${to}\n\nPara sua segurança, preciso autorizar seu acesso primeiro.\n\n✅ Responda com *"AUTORIZAR"* se você é o proprietário deste diário.\n\n⚠️ Caso contrário, ignore esta mensagem.`;
+    const authMessage = `🔐 *Solicitação de Autorização*\n\nOlá! Vejo que você está tentando usar o EssentIA pela primeira vez.\n\n📞 *Seu número:* ${to}\n\nPara sua segurança, preciso autorizar seu acesso primeiro.\n\n✅ Responda com *"AUTORIZAR"* se você é o proprietário deste diário.\n\n⚠️ Caso contrário, ignore esta mensagem.`;
     
     this.pendingAuthorization.add(to);
     return await this.sendTextMessage(to, authMessage);
@@ -196,7 +196,7 @@ class WhatsAppService {
       return savedEntry;
     } else if (message.type === 'text' && message.text?.body.toLowerCase().includes('ajuda')) {
       // Resposta para mensagens de ajuda
-      const helpMessage = `🆘 *Ajuda - Serenus Diário*\n\n📝 *Como usar:*\n• Envie qualquer texto para criar uma entrada no diário\n• Use "ajuda" para ver esta mensagem\n• Use "status" para ver informações da conta\n\n✨ *Dicas:*\n• Escreva sobre seus sentimentos, pensamentos ou eventos do dia\n• Não há limite de tamanho para suas entradas\n• Todas as mensagens são privadas e seguras`;
+      const helpMessage = `🆘 *Ajuda - EssentIA Diário*\n\n📝 *Como usar:*\n• Envie qualquer texto para criar uma entrada no diário\n• Use "ajuda" para ver esta mensagem\n• Use "status" para ver informações da conta\n\n✨ *Dicas:*\n• Escreva sobre seus sentimentos, pensamentos ou eventos do dia\n• Não há limite de tamanho para suas entradas\n• Todas as mensagens são privadas e seguras`;
       
       await this.sendTextMessage(message.from, helpMessage);
     } else {

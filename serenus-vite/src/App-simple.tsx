@@ -6,7 +6,7 @@ const SimpleHome = () => {
   return (
     <div style={{ padding: '20px', minHeight: '100vh', background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '30px', borderRadius: '10px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' }}>
-        <h1 style={{ color: '#1f2937', marginBottom: '20px' }}>🌟 Serenus - Sua jornada de bem-estar emocional</h1>
+        <h1 style={{ color: '#1f2937', marginBottom: '20px' }}>🌟 EssentIA - Sua jornada de bem-estar emocional</h1>
         <p style={{ color: '#6b7280', marginBottom: '30px', fontSize: '18px' }}>Plataforma de saúde mental com IA para acompanhamento terapêutico personalizado.</p>
         
         <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
@@ -114,7 +114,7 @@ function SimpleApp() {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 20px'
           }}></div>
-          <p style={{ color: '#6b7280' }}>Carregando Serenus...</p>
+          <p style={{ color: '#6b7280' }}>Carregando EssentIA...</p>
         </div>
       </div>
     )

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { MentalHealthData } from '@/components/MentalHealthAssessment'
 
 interface User {
   id: string
@@ -9,6 +10,12 @@ interface User {
     notifications: boolean
     privacy: 'public' | 'private'
     reminderTime: string
+  }
+  mentalHealthData?: MentalHealthData
+  wellnessScore?: {
+    overallScore: number
+    riskLevel: 'low' | 'moderate' | 'high'
+    recommendations: string[]
   }
   createdAt: string
 }
@@ -31,6 +38,12 @@ interface RegisterData {
     notifications: boolean
     privacy: 'public' | 'private'
     reminderTime: string
+  }
+  mentalHealthData?: MentalHealthData
+  wellnessScore?: {
+    overallScore: number
+    riskLevel: 'low' | 'moderate' | 'high'
+    recommendations: string[]
   }
 }
 
@@ -56,13 +69,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuthStatus = () => {
       try {
-        const currentUser = localStorage.getItem('serenus_current_user')
+        const currentUser = localStorage.getItem('essentia_current_user')
         if (currentUser) {
           setUser(JSON.parse(currentUser))
         }
       } catch (error) {
         console.error('Erro ao verificar status de autenticação:', error)
-        localStorage.removeItem('serenus_current_user')
+        localStorage.removeItem('essentia_current_user')
       } finally {
         setIsLoading(false)
       }
@@ -74,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
       // Verificar se o email já existe
-      const existingUsers = JSON.parse(localStorage.getItem('serenus_users') || '[]')
+      const existingUsers = JSON.parse(localStorage.getItem('essentia_users') || '[]')
       const emailExists = existingUsers.some((u: User) => u.email === userData.email)
       
       if (emailExists) {
@@ -88,6 +101,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: userData.email,
         goals: userData.goals,
         preferences: userData.preferences,
+        mentalHealthData: userData.mentalHealthData,
+        wellnessScore: userData.wellnessScore,
         createdAt: new Date().toISOString()
       }
 
@@ -99,12 +114,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Salvar no localStorage
       const updatedUsers = [...existingUsers, newUser]
-      const credentials = JSON.parse(localStorage.getItem('serenus_credentials') || '[]')
+      const credentials = JSON.parse(localStorage.getItem('essentia_credentials') || '[]')
       const updatedCredentials = [...credentials, userCredentials]
 
-      localStorage.setItem('serenus_users', JSON.stringify(updatedUsers))
-      localStorage.setItem('serenus_credentials', JSON.stringify(updatedCredentials))
-      localStorage.setItem('serenus_current_user', JSON.stringify(newUser))
+      localStorage.setItem('essentia_users', JSON.stringify(updatedUsers))
+       localStorage.setItem('essentia_credentials', JSON.stringify(updatedCredentials))
+       localStorage.setItem('essentia_current_user', JSON.stringify(newUser))
 
       setUser(newUser)
       return true
@@ -117,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // Verificar credenciais
-      const credentials = JSON.parse(localStorage.getItem('serenus_credentials') || '[]')
+      const credentials = JSON.parse(localStorage.getItem('essentia_credentials') || '[]')
       const userCredential = credentials.find((c: any) => 
         c.email === email && c.password === btoa(password)
       )
@@ -127,14 +142,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Buscar dados do usuário
-      const users = JSON.parse(localStorage.getItem('serenus_users') || '[]')
+      const users = JSON.parse(localStorage.getItem('essentia_users') || '[]')
       const userData = users.find((u: User) => u.email === email)
 
       if (!userData) {
         return false // Usuário não encontrado
       }
 
-      localStorage.setItem('serenus_current_user', JSON.stringify(userData))
+      localStorage.setItem('essentia_current_user', JSON.stringify(userData))
       setUser(userData)
       return true
     } catch (error) {
@@ -144,7 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   const logout = () => {
-    localStorage.removeItem('serenus_current_user')
+    localStorage.removeItem('essentia_current_user')
     setUser(null)
   }
 

@@ -1,4 +1,4 @@
-# Serenus AI - Assistente de Bem-estar Emocional
+# EssentIA AI - Assistente de Bem-estar Emocional
 
 Uma aplicação React moderna para suporte emocional com integração OpenAI.
 
@@ -23,8 +23,8 @@ Uma aplicação React moderna para suporte emocional com integração OpenAI.
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/Vcortez99-hub/SerenusAI.git
-cd SerenusAI/serenus-vite
+git clone https://github.com/Vcortez99-hub/EssentIA.git
+cd EssentIA/essentia-vite
 ```
 
 2. Instale as dependências:
@@ -124,7 +124,7 @@ npm run lint       # Verificação de código
 
 1. **Login**: Use qualquer nome para entrar no sistema
 2. **Dashboard**: Acompanhe seu humor e progresso
-3. **Chat**: Converse com a Serenus AI sobre seus sentimentos
+3. **Chat**: Converse com a EssentIA AI sobre seus sentimentos
 4. **Diário**: Registre suas experiências e reflexões
 
 ## 🤝 Contribuição

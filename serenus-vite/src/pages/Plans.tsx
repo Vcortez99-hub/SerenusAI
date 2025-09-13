@@ -140,7 +140,7 @@ const Plans: React.FC = () => {
             Escolha seu Plano
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Transforme sua jornada de autoconhecimento com o Serenus. 
+            Transforme sua jornada de autoconhecimento com o EssentIA. 
             Escolha o plano que melhor se adapta às suas necessidades.
           </p>
         </motion.div>
@@ -241,7 +241,7 @@ const Plans: React.FC = () => {
         >
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Por que escolher o Serenus?
+              Por que escolher o EssentIA?
             </h3>
             <div className="grid md:grid-cols-3 gap-6 text-center">
               <div>

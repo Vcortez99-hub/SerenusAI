@@ -113,7 +113,7 @@ const PaymentSuccess: React.FC = () => {
               🎉 Pagamento Realizado com Sucesso!
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400">
-              Bem-vindo ao Serenus! Sua assinatura foi ativada.
+              Bem-vindo ao EssentIA! Sua assinatura foi ativada.
             </p>
           </motion.div>
 
@@ -255,8 +255,8 @@ const PaymentSuccess: React.FC = () => {
           >
             <p className="text-gray-600 dark:text-gray-400">
               Precisa de ajuda? Entre em contato conosco pelo email{' '}
-              <a href="mailto:suporte@serenus.com" className="text-blue-500 hover:text-blue-600">
-                suporte@serenus.com
+              <a href="mailto:suporte@essentia.com" className="text-blue-500 hover:text-blue-600">
+              suporte@essentia.com
               </a>
             </p>
           </motion.div>

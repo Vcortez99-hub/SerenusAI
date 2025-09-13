@@ -221,7 +221,7 @@ const WhatsAppIntegration: React.FC = () => {
               <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
                 <li>Digite seu número do WhatsApp no formato internacional (+55 11 99999-9999)</li>
                 <li>Clique em "Vincular" para conectar sua conta</li>
-                <li>Envie uma mensagem para o número do Serenus no WhatsApp</li>
+                <li>Envie uma mensagem para o número do EssentIA no WhatsApp</li>
                 <li>Todas as suas mensagens serão automaticamente salvas como entradas do diário</li>
                 <li>Você receberá confirmações a cada entrada criada</li>
               </ol>

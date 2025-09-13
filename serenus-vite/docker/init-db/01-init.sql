@@ -1,4 +1,4 @@
--- Script de inicialização do banco de dados Serenus
+-- Script de inicialização do banco de dados EssentIA
 -- Este script é executado automaticamente quando o container PostgreSQL é criado
 
 -- Criar extensões necessárias
@@ -6,10 +6,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Criar schema principal
-CREATE SCHEMA IF NOT EXISTS serenus;
+CREATE SCHEMA IF NOT EXISTS essentia;
 
--- Definir schema padrão
-SET search_path TO serenus, public;
+-- Definir o schema padrão
+SET search_path TO essentia, public;
 
 -- Tabela de usuários
 CREATE TABLE IF NOT EXISTS users (
@@ -126,7 +126,7 @@ CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferen
 
 -- Dados de exemplo para desenvolvimento (opcional)
 INSERT INTO users (email, password_hash, name) VALUES 
-('dev@serenus.com', crypt('dev123', gen_salt('bf')), 'Desenvolvedor')
+('dev@essentia.com', crypt('dev123', gen_salt('bf')), 'Desenvolvedor')
 ON CONFLICT (email) DO NOTHING;
 
 -- Comentários nas tabelas

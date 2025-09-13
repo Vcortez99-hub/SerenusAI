@@ -1,7 +1,7 @@
 # 🔧 Script de Configuração do Webhook WhatsApp
 # Este script automatiza a configuração do túnel ngrok para o webhook
 
-Write-Host "🚀 Configurando Webhook do WhatsApp para Serenus" -ForegroundColor Green
+Write-Host "🚀 Configurando Webhook do WhatsApp para EssentIA" -ForegroundColor Green
 Write-Host "================================================" -ForegroundColor Green
 
 # Verificar se o servidor está rodando
@@ -99,7 +99,7 @@ if ($publicUrl) {
     Write-Host "📋 INFORMAÇÕES PARA CONFIGURAÇÃO:" -ForegroundColor Cyan
     Write-Host "================================" -ForegroundColor Cyan
     Write-Host "URL do Webhook: $publicUrl/webhook" -ForegroundColor White
-    Write-Host "Verify Token: serenus_webhook_token_2024" -ForegroundColor White
+    Write-Host "Verify Token: essentia_webhook_token_2024" -ForegroundColor White
     Write-Host "" 
     
     # Copiar URL para clipboard se possível
@@ -116,7 +116,7 @@ if ($publicUrl) {
     Write-Host "1. Acesse: https://developers.facebook.com/" -ForegroundColor White
     Write-Host "2. Vá para seu app WhatsApp > Configuration > Webhooks" -ForegroundColor White
     Write-Host "3. Cole a URL do webhook acima" -ForegroundColor White
-    Write-Host "4. Use o verify token: serenus_webhook_token_2024" -ForegroundColor White
+    Write-Host "4. Use o verify token: essentia_webhook_token_2024" -ForegroundColor White
     Write-Host "5. Marque o campo 'messages'" -ForegroundColor White
     Write-Host "6. Clique em 'Verify and Save'" -ForegroundColor White
     Write-Host "7. Subscribe aos eventos 'messages'" -ForegroundColor White

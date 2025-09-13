@@ -1,6 +1,6 @@
-# Docker Setup para Serenus
+# Docker Setup para EssentIA
 
-Este diretório contém a configuração Docker para o projeto Serenus, incluindo desenvolvimento e produção.
+Este diretório contém a configuração Docker para o projeto EssentIA, incluindo desenvolvimento e produção.
 
 ## Estrutura
 
@@ -63,9 +63,9 @@ docker-compose up -d app
 **Credenciais de desenvolvimento:**
 - Host: `localhost` (ou `db` dentro do container)
 - Porta: `5432`
-- Database: `serenus_dev`
-- Usuário: `serenus`
-- Senha: `serenus_password`
+- Database: `essentia_dev`
+- Usuário: `essentia`
+- Senha: `essentia_password`
 
 ### Variáveis de Ambiente
 
@@ -73,7 +73,7 @@ Crie um arquivo `.env` na raiz do projeto com:
 
 ```env
 # Database
-DATABASE_URL=postgresql://serenus:serenus_password@localhost:5432/serenus_dev
+DATABASE_URL=postgresql://essentia:essentia_password@localhost:5432/essentia_dev
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -91,10 +91,10 @@ SMTP_PASS=
 
 ```bash
 # Build da imagem de produção
-docker build -t serenus-app .
+docker build -t essentia-app .
 
 # Executar container de produção
-docker run -p 80:80 serenus-app
+docker run -p 80:80 essentia-app
 ```
 
 ### Docker Compose para Produção
@@ -115,19 +115,19 @@ services:
       - db
       - redis
     networks:
-      - serenus-network
+      - essentia-network
 
   db:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: serenus_prod
+      POSTGRES_DB: essentia_prod
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     networks:
-      - serenus-network
+      - essentia-network
 
   redis:
     image: redis:7-alpine
@@ -135,7 +135,7 @@ services:
     volumes:
       - redis_prod_data:/data
     networks:
-      - serenus-network
+      - essentia-network
     command: redis-server --appendonly yes
 
 volumes:
@@ -143,7 +143,7 @@ volumes:
   redis_prod_data:
 
 networks:
-  serenus-network:
+  essentia-network:
     driver: bridge
 ```
 
@@ -173,7 +173,7 @@ networks:
    
    # Resetar volume do banco (CUIDADO: apaga dados)
    docker-compose down -v
-   docker volume rm serenus-vite_postgres_data
+   docker volume rm essentia-vite_postgres_data
    ```
 
 4. **Hot reload não funciona**
@@ -189,7 +189,7 @@ docker-compose exec app npm run test
 
 # Acessar shell do container
 docker-compose exec app sh
-docker-compose exec db psql -U serenus -d serenus_dev
+docker-compose exec db psql -U essentia -d essentia_dev
 
 # Verificar status dos containers
 docker-compose ps
@@ -230,18 +230,18 @@ curl http://localhost/health
 
 ```bash
 # Criar backup
-docker-compose exec db pg_dump -U serenus serenus_dev > backup.sql
+docker-compose exec db pg_dump -U essentia essentia_dev > backup.sql
 
-# Restore do backup
-docker-compose exec -T db psql -U serenus serenus_dev < backup.sql
+# Restaurar backup
+docker-compose exec -T db psql -U essentia essentia_dev < backup.sql
 ```
 
 ### Backup dos Volumes
 
 ```bash
 # Backup do volume do PostgreSQL
-docker run --rm -v serenus-vite_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_backup.tar.gz -C /data .
+docker run --rm -v essentia-vite_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_backup.tar.gz -C /data .
 
-# Restore do volume
-docker run --rm -v serenus-vite_postgres_data:/data -v $(pwd):/backup alpine tar xzf /backup/postgres_backup.tar.gz -C /data
+# Restaurar volume
+docker run --rm -v essentia-vite_postgres_data:/data -v $(pwd):/backup alpine tar xzf /backup/postgres_backup.tar.gz -C /data
 ```

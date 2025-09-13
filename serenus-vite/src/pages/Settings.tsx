@@ -15,7 +15,7 @@ const Settings: React.FC = () => {
             Configurações
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
-            Personalize sua experiência no Serenus
+            Personalize sua experiência no EssentIA
           </p>
         </motion.div>
 

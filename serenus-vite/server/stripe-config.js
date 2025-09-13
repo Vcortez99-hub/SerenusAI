@@ -106,7 +106,7 @@ async function setupStripeProducts() {
     // Criar produto de teste
     const testProduct = await stripe.products.create({
       name: PLANS.test.name,
-      description: 'Plano de teste do Serenus - Experimente por apenas R$ 1,00',
+      description: 'Plano de teste do EssentIA - Experimente por apenas R$ 1,00',
       metadata: {
         planId: 'test'
       }
@@ -125,7 +125,7 @@ async function setupStripeProducts() {
     // Criar produto básico
     const basicProduct = await stripe.products.create({
       name: PLANS.basic.name,
-      description: 'Plano básico do Serenus - Perfeito para começar sua jornada de bem-estar',
+      description: 'Plano básico do EssentIA - Perfeito para começar sua jornada de bem-estar',
       metadata: {
         planId: 'basic'
       }
@@ -144,7 +144,7 @@ async function setupStripeProducts() {
     // Criar produto premium
     const premiumProduct = await stripe.products.create({
       name: PLANS.premium.name,
-      description: 'Plano premium do Serenus - Para quem busca o máximo em autoconhecimento',
+      description: 'Plano premium do EssentIA - Para quem busca o máximo em autoconhecimento',
       metadata: {
         planId: 'premium'
       }

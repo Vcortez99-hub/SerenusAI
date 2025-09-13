@@ -1,6 +1,6 @@
-# Serenus WhatsApp Integration Server
+# EssentIA WhatsApp Integration Server
 
-Servidor backend para integração do Serenus com WhatsApp Business API, permitindo que usuários escrevam em seus diários através de mensagens do WhatsApp.
+Servidor backend para integração do EssentIA com WhatsApp Business API, permitindo que usuários escrevam em seus diários através de mensagens do WhatsApp.
 
 ## 🚀 Funcionalidades
 

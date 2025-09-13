@@ -29,7 +29,7 @@ interface Message {
 const initialMessages: Message[] = [
   {
     id: '1',
-    content: 'Olá! Eu sou a Serenus, sua assistente de bem-estar emocional especializada. 🌸 Como você está se sentindo hoje? Estou aqui para te escutar e oferecer suporte.',
+    content: 'Olá! Eu sou a EssentIA, sua assistente de bem-estar emocional especializada. 🌸 Como você está se sentindo hoje? Estou aqui para te escutar e oferecer suporte.',
     sender: 'ai',
     timestamp: new Date(),
     type: 'text'
@@ -168,7 +168,7 @@ export default function Chat() {
                   <Brain className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold text-gray-900">Serenus AI</h1>
+                  <h1 className="font-semibold text-gray-900">EssentIA AI</h1>
                   <p className="text-sm text-gray-600">Assistente de bem-estar</p>
                 </div>
               </div>
@@ -213,7 +213,7 @@ export default function Chat() {
                         <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
                           <Brain className="w-3 h-3 text-white" />
                         </div>
-                        <span className="text-xs font-medium text-gray-600">Serenus AI</span>
+                        <span className="text-xs font-medium text-gray-600">EssentIA AI</span>
                       </div>
                     )}
                     
@@ -245,7 +245,7 @@ export default function Chat() {
                     <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
                       <Brain className="w-3 h-3 text-white" />
                     </div>
-                    <span className="text-xs font-medium text-gray-600">Serenus AI</span>
+                    <span className="text-xs font-medium text-gray-600">EssentIA AI</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Loader2 className="w-4 h-4 text-green-500 animate-spin" />
@@ -302,7 +302,7 @@ export default function Chat() {
               <div className="px-4 pt-3 pb-1 bg-gradient-to-r from-primary-50 to-green-50 border-b">
                 <div className="flex items-center space-x-2 text-xs text-gray-600">
                   <Zap className="w-3 h-3 text-primary-500" />
-                  <span>Serenus está pronta para te ajudar</span>
+                  <span>EssentIA está pronta para te ajudar</span>
                   <Heart className="w-3 h-3 text-red-400 animate-pulse" />
                 </div>
               </div>

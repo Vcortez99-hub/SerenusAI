@@ -12,13 +12,19 @@ export default function Home() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">♥</span>
             </div>
-            <span className="text-2xl font-bold text-gray-800 font-headings">Serenus</span>
+            <span className="text-2xl font-bold text-gray-800 font-headings">EssentIA</span>
           </div>
           
           <div className="flex items-center space-x-6">
             <a href="#features" className="text-gray-800 hover:text-blue-600 font-medium">
               Funcionalidades
             </a>
+            <Link 
+              to="/login"
+              className="text-gray-800 hover:text-blue-600 font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Entrar
+            </Link>
             <Link 
               to="/onboarding"
               className="bg-blue-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-600 transition-colors shadow-lg hover:shadow-xl"
@@ -95,7 +101,7 @@ export default function Home() {
                       <span className="text-white text-xl">🧠</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Serenus AI</h3>
+                      <h3 className="font-semibold text-gray-900">EssentIA AI</h3>
                       <p className="text-sm text-gray-600">Seu assistente de bem-estar</p>
                     </div>
                   </div>
@@ -205,7 +211,7 @@ export default function Home() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">♥</span>
             </div>
-            <span className="text-2xl font-bold font-headings">Serenus</span>
+            <span className="text-2xl font-bold font-headings">EssentIA</span>
           </div>
           <p className="text-gray-400 mb-8">
             Sua jornada de bem-estar emocional, guiada por IA e cuidado humano

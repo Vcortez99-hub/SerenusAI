@@ -1,7 +1,7 @@
 {
-  "name": "serenus-whatsapp-server",
+  "name": "essentia-whatsapp-server",
   "version": "1.0.0",
-  "description": "Backend server para integração WhatsApp com Serenus",
+  "description": "Backend server para integração WhatsApp com EssentIA",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -12,9 +12,9 @@
     "whatsapp",
     "webhook",
     "diary",
-    "serenus"
+    "essentia"
   ],
-  "author": "Serenus Team",
+  "author": "EssentIA Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.11.0",

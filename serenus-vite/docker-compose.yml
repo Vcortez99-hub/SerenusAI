@@ -18,7 +18,7 @@ services:
       - db
       - redis
     networks:
-      - serenus-network
+      - essentia-network
     stdin_open: true
     tty: true
 
@@ -29,14 +29,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: serenus_dev
-      POSTGRES_USER: serenus
-      POSTGRES_PASSWORD: serenus_password
+      POSTGRES_DB: essentia_dev
+      POSTGRES_USER: essentia
+      POSTGRES_PASSWORD: essentia_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db:/docker-entrypoint-initdb.d
     networks:
-      - serenus-network
+      - essentia-network
 
   # Redis para cache e sessões
   redis:
@@ -47,7 +47,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - serenus-network
+      - essentia-network
     command: redis-server --appendonly yes
 
   # Adminer para gerenciamento do banco
@@ -59,7 +59,7 @@ services:
     depends_on:
       - db
     networks:
-      - serenus-network
+      - essentia-network
     environment:
       ADMINER_DEFAULT_SERVER: db
 
@@ -71,7 +71,7 @@ services:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
     networks:
-      - serenus-network
+      - essentia-network
 
 volumes:
   postgres_data:
@@ -80,5 +80,5 @@ volumes:
     driver: local
 
 networks:
-  serenus-network:
+  essentia-network:
     driver: bridge

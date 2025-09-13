@@ -2,7 +2,7 @@
 
 ## ❌ Problema Identificado
 
-O sistema Serenus está funcionando perfeitamente para mensagens de teste, mas **não está recebendo mensagens reais** enviadas do seu WhatsApp porque o webhook não está configurado no Meta for Developers.
+O sistema EssentIA está funcionando perfeitamente para mensagens de teste, mas **não está recebendo mensagens reais** enviadas do seu WhatsApp porque o webhook não está configurado no Meta for Developers.
 
 ## ✅ Solução: Configurar Webhook no Meta for Developers
 
@@ -46,7 +46,7 @@ Após executar, você receberá uma URL pública como:
 3. **Configurar o Webhook**
    - **Callback URL**: `https://sua-url-publica.ngrok.io/webhook`
      - Exemplo: `https://abc123.ngrok.io/webhook`
-   - **Verify Token**: `serenus_webhook_token_2024` (mesmo do .env)
+   - **Verify Token**: `essentia_webhook_token_2024` (mesmo do .env)
    - **Webhook Fields**: Marque **"messages"**
 
 4. **Verificar e Salvar**
