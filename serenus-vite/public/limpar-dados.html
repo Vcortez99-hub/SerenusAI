@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Limpar Dados - EssentIA</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .btn-limpar {
+            background: #f5576c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Limpar Dados</h1>
+        <button class="btn-limpar" onclick="localStorage.clear(); sessionStorage.clear(); alert('Dados limpos!'); window.location.href='/';">
+            Limpar Tudo
+        </button>
+    </div>
+</body>
+</html>

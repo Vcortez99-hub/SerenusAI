@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production
+server/.env
+server/.env.local
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Data files (não commitar em produção)
+server/diary-entries.json
+server/users.json
+
+# Temporary files
+*.tmp
+.cache/

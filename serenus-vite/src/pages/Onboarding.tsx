@@ -20,6 +20,7 @@ interface UserData {
   name: string
   email: string
   password: string
+  phone: string
   goals: string[]
   preferences: {
     notifications: boolean
@@ -38,6 +39,7 @@ const initialUserData: UserData = {
   name: '',
   email: '',
   password: '',
+  phone: '',
   goals: [],
   preferences: {
     notifications: true,
@@ -105,6 +107,27 @@ const AccountStep = ({ userData, updateUserData }: AccountStepProps) => (
             placeholder="seu@email.com"
           />
         </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Telefone (WhatsApp)</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">📱</span>
+          <input
+            type="tel"
+            value={userData.phone}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '');
+              updateUserData({ phone: value });
+            }}
+            maxLength={13}
+            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="5511999999999"
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Vincule seu WhatsApp para receber lembretes e registrar entradas no diário
+        </p>
       </div>
       
       <div>
@@ -283,6 +306,7 @@ export default function Onboarding() {
         name: userData.name,
         email: userData.email,
         password: userData.password,
+        phone: userData.phone,
         goals: userData.goals,
         preferences: userData.preferences,
         mentalHealthData: userData.mentalHealthData,
@@ -314,7 +338,7 @@ export default function Onboarding() {
   }
   
   const nextMentalHealthStep = () => {
-    if (mentalHealthStep < 4) {
+    if (mentalHealthStep < 5) {
       setMentalHealthStep(prev => prev + 1)
     } else {
       // Calcular pontuação de bem-estar ao finalizar avaliação

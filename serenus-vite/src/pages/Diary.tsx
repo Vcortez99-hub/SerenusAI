@@ -88,60 +88,33 @@ export default function Diary() {
     }
   }, [user])
 
-  // Função para carregar todas as entradas (localStorage + WhatsApp)
+  // Função para carregar todas as entradas do servidor (API)
   const loadAllEntries = async () => {
     if (!user) return
 
     try {
-      // Carregar entradas locais do localStorage
-      const diaryKey = `diary_entries_${user.id}`
-      const savedEntries = localStorage.getItem(diaryKey)
-      let localEntries: DiaryEntry[] = []
-      
-      if (savedEntries) {
-        localEntries = JSON.parse(savedEntries).map((entry: any) => {
-          const moodScore = entry.moodScore || moodCategoryToScore(entry.mood)
-          return {
-            ...entry,
-            date: new Date(entry.date),
-            moodScore: moodScore,
-            source: 'local'
-          }
-        })
-      }
-
-      // Carregar entradas do WhatsApp
+      // Carregar todas as entradas do servidor (frontend + WhatsApp)
       setIsLoadingWhatsApp(true)
       setWhatsappError(null)
-      
+
       try {
-        const whatsappEntries = await diaryApiService.getAllEntries()
-        const convertedWhatsAppEntries = whatsappEntries.map(entry => {
+        const serverEntries = await diaryApiService.getAllEntries()
+        const convertedEntries = serverEntries.map(entry => {
           const converted = diaryApiService.convertToFrontendEntry(entry)
           return {
             ...converted,
-            source: 'whatsapp' as const
+            source: entry.metadata?.source || 'whatsapp' as const
           }
         })
 
-        // Combinar entradas locais e do WhatsApp
-        const allEntries = [...localEntries, ...convertedWhatsAppEntries]
-        
         // Ordenar por data (mais recente primeiro)
-        allEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        
-        setEntries(allEntries)
-        
-        // Salvar entradas locais atualizadas se necessário
-        if (localEntries.some((entry: any) => !entry.moodScore)) {
-          saveLocalEntries(localEntries)
-        }
-      } catch (whatsappError) {
-        console.warn('Erro ao carregar entradas do WhatsApp:', whatsappError)
-        setWhatsappError('Não foi possível carregar mensagens do WhatsApp')
-        
-        // Usar apenas entradas locais em caso de erro
-        setEntries(localEntries)
+        convertedEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+        setEntries(convertedEntries)
+      } catch (apiError) {
+        console.warn('Erro ao carregar entradas da API:', apiError)
+        setWhatsappError('Não foi possível conectar ao servidor')
+        setEntries([])
       }
     } catch (error) {
       console.error('Erro ao carregar entradas:', error)
@@ -194,37 +167,52 @@ export default function Diary() {
   }
 
   // Adicionar nova entrada
-  const handleAddEntry = () => {
+  const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) {
       alert('Por favor, preencha o título e o conteúdo da entrada.')
       return
     }
 
-    const moodScore = moodCategoryToScore(newEntry.mood)
-    const entry: DiaryEntry = {
-      id: Date.now().toString(),
-      date: new Date(),
-      title: newEntry.title,
-      content: newEntry.content,
-      mood: newEntry.mood,
-      moodScore: moodScore,
-      tags: newEntry.tags,
-      gratitude: newEntry.gratitude
+    if (!user) {
+      alert('Usuário não autenticado.')
+      return
     }
 
-    const updatedEntries = [entry, ...entries]
-    saveEntries(updatedEntries)
-    
-    // Resetar formulário
-    setNewEntry({
-      title: '',
-      content: '',
-      mood: 'neutral',
-      moodScore: 3,
-      tags: [],
-      gratitude: []
-    })
-    setShowNewEntryForm(false)
+    try {
+      const moodScore = moodCategoryToScore(newEntry.mood)
+
+      // Salvar na API do servidor
+      await diaryApiService.createEntry({
+        userId: user.id,
+        userName: user.name,
+        userPhone: user.phone || '',
+        title: newEntry.title,
+        content: newEntry.content,
+        mood: newEntry.mood,
+        moodScore: moodScore,
+        tags: newEntry.tags,
+        gratitude: newEntry.gratitude
+      })
+
+      // Recarregar entradas após salvar
+      await loadAllEntries()
+
+      // Resetar formulário
+      setNewEntry({
+        title: '',
+        content: '',
+        mood: 'neutral',
+        moodScore: 3,
+        tags: [],
+        gratitude: []
+      })
+      setShowNewEntryForm(false)
+
+      alert('Entrada salva com sucesso no servidor!')
+    } catch (error) {
+      console.error('Erro ao salvar entrada:', error)
+      alert('Erro ao salvar entrada. Tente novamente.')
+    }
   }
 
   // Excluir entrada

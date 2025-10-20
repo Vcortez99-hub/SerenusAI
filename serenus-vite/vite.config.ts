@@ -12,32 +12,42 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
-    host: '0.0.0.0', // Permite conexões externas (necessário para Docker)
-    open: true,
+    port: 5173,
+    host: 'localhost',
+    open: false,
     watch: {
-      usePolling: true, // Necessário para hot reload no Docker
+      usePolling: true,
     },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/webhook': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/stripe': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/test-whatsapp': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    css: true,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        'dist/'
-      ]
-    }
   },
 })

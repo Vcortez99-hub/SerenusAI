@@ -45,12 +45,12 @@ export function getMoodEmoji(score: number): string {
 
 export function getMoodLabel(score: number): string {
   // Escala 1-5 usada no Dashboard
-  if (score === 5) return 'Muito Bem'     // Muito feliz
-  if (score === 4) return 'Bem'           // Feliz
-  if (score === 3) return 'Ok'            // Neutro
+  if (score === 5) return 'Muito feliz'   // Muito feliz
+  if (score === 4) return 'Feliz'         // Feliz
+  if (score === 3) return 'Neutro'        // Neutro
   if (score === 2) return 'Triste'        // Triste
   if (score === 1) return 'Muito triste'  // Muito triste
-  
+
   // Fallback para escala 1-10 (dados antigos)
   if (score >= 9) return 'Excelente'
   if (score >= 8) return 'Muito Bem'

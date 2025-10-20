@@ -1,159 +1,295 @@
-# EssentIA AI - Assistente de Bem-estar Emocional
+# 🌊 EssentIA - Plataforma de Bem-Estar Emocional
 
-Uma aplicação React moderna para suporte emocional com integração OpenAI.
+**Sua jornada de bem-estar emocional, guiada por IA e cuidado humano**
 
-## 🚀 Funcionalidades
-
-- **Chat com IA Especializada**: Conversas com agente especializado em saúde mental e bem-estar emocional
-- **Dashboard Interativo**: Acompanhamento do humor e progresso pessoal
-- **Exercícios de Bem-estar**: Técnicas de respiração, meditação e mindfulness
-- **Design Responsivo**: Interface otimizada para desktop e mobile
-- **Animações Suaves**: Experiência visual agradável sem sobrecarga mental
-
-## 🛠️ Tecnologias
-
-- React 18 + TypeScript
-- Vite (build tool)
-- Tailwind CSS
-- Framer Motion (animações)
-- Lucide React (ícones)
-- OpenAI GPT-4o-mini
-
-## 📦 Instalação
-
-1. Clone o repositório:
-```bash
-git clone https://github.com/Vcortez99-hub/EssentIA.git
-cd EssentIA/essentia-vite
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env
-```
-
-4. Adicione sua API key da OpenAI no arquivo `.env`:
-```env
-VITE_OPENAI_API_KEY=your_openai_api_key_here
-```
-
-5. Execute o projeto:
-```bash
-npm run dev
-```
-
-## 🤖 Configuração da OpenAI
-
-### Obtendo sua API Key
-
-1. Acesse [platform.openai.com](https://platform.openai.com)
-2. Faça login ou crie uma conta
-3. Vá para API Keys e gere uma nova chave
-4. Adicione créditos à sua conta (o GPT-4o-mini é muito econômico)
-
-### Modelo Utilizado
-
-- **GPT-4o-mini**: Modelo mais econômico da OpenAI, otimizado para conversas
-- **Custo aproximado**: ~$0.15 por 1 milhão de tokens de entrada
-- **Ideal para**: Aplicações de chat com boa qualidade e baixo custo
-
-### Prompt Especializado
-
-O agente possui um prompt detalhado com:
-- Diretrizes de segurança (detecção de crises)
-- Técnicas baseadas em evidências científicas
-- Abordagem empática e acolhedora
-- Recursos de emergência do Brasil (CVV 188, CAPS, etc.)
-- Limitações éticas claras
-
-## 🎨 Melhorias no Design
-
-### Elementos Visuais
-- Gradientes suaves e cores calmantes
-- Ícones e emojis contextuais
-- Animações micro-interativas
-- Feedback visual em tempo real
-
-### UX Aprimorada
-- Sugestões rápidas com ícones coloridos
-- Indicador de digitação personalizado
-- Estados de hover e transições suaves
-- Responsividade completa
-
-### Funcionalidades de Bem-estar
-- Rastreamento de humor com escala visual
-- Exercícios guiados de respiração
-- Diário digital com tags
-- Sistema de conquistas
-
-## 🔧 Scripts Disponíveis
-
-```bash
-npm run dev        # Servidor de desenvolvimento
-npm run build      # Build para produção
-npm run preview    # Preview do build
-npm run lint       # Verificação de código
-```
-
-## 🌟 Funcionalidades Principais
-
-### Chat Inteligente
-- Integração com OpenAI GPT-4o-mini
-- Respostas especializadas em saúde mental
-- Fallback para respostas offline
-- Histórico de conversa mantido
-
-### Dashboard Personalizado
-- Acompanhamento de humor diário
-- Estatísticas de progresso
-- Exercícios personalizados
-- Conquistas desbloqueáveis
-
-### Segurança e Privacidade
-- Dados armazenados localmente
-- Detecção de situações de crise
-- Orientações para busca de ajuda profissional
-- Compliance com boas práticas de saúde mental
-
-## 📱 Uso da Aplicação
-
-1. **Login**: Use qualquer nome para entrar no sistema
-2. **Dashboard**: Acompanhe seu humor e progresso
-3. **Chat**: Converse com a EssentIA AI sobre seus sentimentos
-4. **Diário**: Registre suas experiências e reflexões
-
-## 🤝 Contribuição
-
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -m 'Add nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-## 📋 Roadmap
-
-- [ ] Integração com APIs de saúde
-- [ ] Sistema de lembretes
-- [ ] Modo offline completo
-- [ ] Sincronização com múltiplos dispositivos
-- [ ] Relatórios de progresso em PDF
-
-## 🆘 Recursos de Emergência
-
-- **CVV**: 188 (24h, gratuito)
-- **CAPS**: Centro de Atenção Psicossocial (busque na sua cidade)
-- **SAMU**: 192
-- **Bombeiros**: 193
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
 ---
 
-**Importante**: Esta aplicação oferece suporte emocional complementar e não substitui acompanhamento profissional especializado. Em caso de crise ou ideação suicida, procure ajuda imediatamente.
+## 🎯 Sobre o Projeto
+
+**EssentIA** é uma plataforma SaaS inovadora que combina Inteligência Artificial com terapia e práticas integrativas para promover o bem-estar emocional.
+
+### ✨ Principais Funcionalidades
+
+- 🤖 **Chat com IA** - Assistente emocional disponível 24/7
+- 📝 **Diário Digital** - Registre seus pensamentos e sentimentos
+- 📱 **Integração WhatsApp** - Escreva no diário pelo WhatsApp
+- 📊 **Análise de Sentimento** - IA analisa seu humor automaticamente
+- 💳 **Sistema de Planos** - Integração com Stripe
+- 🎨 **Interface Moderna** - Design glassmorphism e animações fluidas
+
+---
+
+## 🚀 Início Rápido
+
+### Pré-requisitos
+
+- Node.js 18+
+- npm ou yarn
+- Conta Meta for Developers (para WhatsApp)
+- Chave API OpenAI (opcional)
+
+### Instalação
+
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/essentia.git
+cd essentia/essentia-vite
+
+# Instalar dependências do frontend
+npm install
+
+# Instalar dependências do backend
+cd server && npm install && cd ..
+
+# Configurar variáveis de ambiente
+cp .env.example .env
+cp server/.env.example server/.env
+
+# Edite os arquivos .env com suas credenciais
+```
+
+### Iniciar Aplicação
+
+```bash
+# Iniciar frontend e backend simultaneamente
+npm start
+```
+
+Acesse:
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
+
+---
+
+## 📚 Documentação Completa
+
+- [📱 Configurar WhatsApp](./WHATSAPP_SETUP.md) - Guia passo a passo
+- [🚀 Deploy no Render/Railway](./DEPLOY_RENDER.md) - Colocar em produção
+- [🏛️ Plano de Melhorias](./PLANO_MELHORIAS_ARQUITETURA.md) - Roadmap técnico
+
+---
+
+## 🏗️ Arquitetura
+
+```
+essentia-vite/
+├── src/                      # Frontend React + TypeScript
+│   ├── components/           # Componentes reutilizáveis
+│   ├── pages/               # Páginas da aplicação
+│   ├── contexts/            # Context API (Auth, etc)
+│   └── services/            # APIs (OpenAI, Diary, etc)
+│
+├── server/                  # Backend Node.js + Express
+│   ├── index.js            # Servidor principal
+│   ├── whatsapp.js         # Integração WhatsApp
+│   ├── diary-storage.js    # Armazenamento do diário
+│   └── user-storage.js     # Gerenciamento de usuários
+│
+└── docs/                    # Documentação
+    ├── WHATSAPP_SETUP.md
+    └── DEPLOY_RENDER.md
+```
+
+---
+
+## 🔧 Configuração
+
+### Frontend (`.env`)
+
+```env
+VITE_OPENAI_API_KEY=sua_chave_openai
+VITE_API_URL=http://localhost:3001
+```
+
+### Backend (`server/.env`)
+
+```env
+# Server
+PORT=3001
+NODE_ENV=development
+
+# WhatsApp Business API
+WA_PHONE_NUMBER_ID=seu_phone_number_id
+CLOUD_API_ACCESS_TOKEN=seu_token
+WEBHOOK_VERIFICATION_TOKEN=seu_webhook_token
+
+# OpenAI
+OPENAI_API_KEY=sua_chave_openai
+
+# Stripe (opcional)
+STRIPE_SECRET_KEY=sua_chave_stripe
+```
+
+📖 **Guia completo**: [WHATSAPP_SETUP.md](./WHATSAPP_SETUP.md)
+
+---
+
+## 🎨 Funcionalidades
+
+### 1. Dashboard
+- Rastreamento de humor diário
+- Gráficos de evolução emocional  
+- Exercícios recomendados pela IA
+- Progresso gamificado
+
+### 2. Chat com IA
+- Assistente terapêutico 24/7
+- Análise de sentimento em tempo real
+- Sugestões personalizadas
+- Histórico de conversas
+
+### 3. Diário Digital
+- Entradas locais + WhatsApp
+- Tags automáticas
+- Análise de humor
+- Busca e filtros avançados
+- Relatórios com IA
+
+### 4. Integração WhatsApp ⭐
+- Envie mensagens → vira entrada no diário
+- Confirmação automática
+- Análise de sentimento
+- Comandos: `ajuda`, `status`
+
+### 5. Sistema de Planos
+- Free, Premium, Enterprise
+- Integração com Stripe
+- Gestão de assinaturas
+
+---
+
+## 🚀 Deploy
+
+### Opção 1: Render (Free)
+
+```bash
+# Seguir: DEPLOY_RENDER.md
+```
+
+### Opção 2: Vercel + Railway
+
+- **Frontend**: Vercel (free, ilimitado)
+- **Backend**: Railway ($5 free/mês)
+
+```bash
+# Frontend
+vercel
+
+# Backend  
+railway init && railway up
+```
+
+📖 **Guia completo**: [DEPLOY_RENDER.md](./DEPLOY_RENDER.md)
+
+---
+
+## 💰 Custos
+
+### Free Tier (para começar)
+- Frontend (Vercel): **R$ 0**
+- Backend (Render/Railway): **R$ 0**
+- Banco (MongoDB Atlas/Supabase): **R$ 0**
+- WhatsApp (Meta): **R$ 0** (até 1000 conversas/mês)
+- **TOTAL**: **R$ 0/mês** 🎉
+
+### Produção Recomendada
+- Frontend (Vercel): **R$ 0**
+- Backend (Render Starter): **~R$ 35/mês**
+- Banco (MongoDB Atlas M0): **R$ 0**
+- **TOTAL**: **~R$ 35/mês**
+
+---
+
+## 🛠️ Scripts Disponíveis
+
+```bash
+npm start          # Inicia frontend + backend
+npm run dev        # Apenas frontend
+npm run dev:backend # Apenas backend
+npm run build      # Build de produção
+npm run lint       # Linter
+```
+
+---
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas!
+
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/NovaFeature`)
+3. Commit suas mudanças (`git commit -m 'Add: Nova feature'`)
+4. Push (`git push origin feature/NovaFeature`)
+5. Abra um Pull Request
+
+---
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT.
+
+---
+
+## 👥 Equipe
+
+**EssentIA Team**
+
+---
+
+## 📞 Suporte
+
+- 📧 Email: suporte@essentia.app
+- 🐛 Issues: [GitHub Issues](https://github.com/seu-usuario/essentia/issues)
+- 📖 Docs: [Documentação Completa](./docs/)
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Frontend React + TypeScript
+- [x] Backend Node.js + Express
+- [x] Integração WhatsApp
+- [x] Análise de Sentimento (OpenAI)
+- [x] Sistema de Autenticação
+- [x] Stripe Integration
+- [ ] Testes Automatizados
+- [ ] PWA (Modo Offline)
+- [ ] Notificações Push
+- [ ] Marketplace de Terapeutas
+- [ ] Videochamadas
+- [ ] Multi-idioma
+
+---
+
+## ⚡ Tech Stack
+
+**Frontend:**
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- React Router
+- Chart.js
+
+**Backend:**
+- Node.js + Express
+- WhatsApp Business API
+- OpenAI API
+- Stripe
+
+**Deploy:**
+- Frontend: Vercel
+- Backend: Render/Railway
+- Database: MongoDB Atlas/Supabase
+
+---
+
+**Feito com ❤️ e ☕ pela equipe EssentIA**
+
+🌊 Transformando cuidado emocional através da tecnologia

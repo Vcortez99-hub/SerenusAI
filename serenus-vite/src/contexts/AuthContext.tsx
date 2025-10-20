@@ -5,6 +5,7 @@ interface User {
   id: string
   name: string
   email: string
+  phone?: string
   goals: string[]
   preferences: {
     notifications: boolean
@@ -33,6 +34,7 @@ interface RegisterData {
   name: string
   email: string
   password: string
+  phone: string
   goals: string[]
   preferences: {
     notifications: boolean
@@ -99,6 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         id: Date.now().toString(),
         name: userData.name,
         email: userData.email,
+        phone: userData.phone,
         goals: userData.goals,
         preferences: userData.preferences,
         mentalHealthData: userData.mentalHealthData,
@@ -118,8 +121,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedCredentials = [...credentials, userCredentials]
 
       localStorage.setItem('essentia_users', JSON.stringify(updatedUsers))
-       localStorage.setItem('essentia_credentials', JSON.stringify(updatedCredentials))
-       localStorage.setItem('essentia_current_user', JSON.stringify(newUser))
+      localStorage.setItem('essentia_credentials', JSON.stringify(updatedCredentials))
+      localStorage.setItem('essentia_current_user', JSON.stringify(newUser))
+
+      // Salvar no backend se o telefone foi fornecido
+      if (userData.phone) {
+        try {
+          // Formatar telefone para o padrão internacional (remover caracteres especiais)
+          const cleanPhone = userData.phone.replace(/\D/g, '')
+          const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`
+          
+          const response = await fetch('/api/users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: userData.name,
+              email: userData.email,
+              phone: formattedPhone
+            })
+          })
+          
+          if (!response.ok) {
+            console.warn('Erro ao salvar usuário no backend, mas continuando com o registro local')
+          }
+        } catch (error) {
+          console.warn('Erro ao conectar com o backend, mas continuando com o registro local:', error)
+        }
+      }
 
       setUser(newUser)
       return true

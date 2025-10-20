@@ -37,12 +37,54 @@ interface DiaryStatsResponse {
   details?: string
 }
 
+interface CreateDiaryEntryData {
+  userId: string
+  userName: string
+  userPhone: string
+  title: string
+  content: string
+  mood: 'happy' | 'neutral' | 'sad'
+  moodScore: number
+  tags: string[]
+  gratitude: string[]
+}
+
 class DiaryApiService {
   private baseUrl: string
 
   constructor() {
-    // URL do servidor backend
-    this.baseUrl = 'http://localhost:3001/api'
+    // URL do servidor backend - usar caminho relativo para funcionar com proxy do Vite
+    this.baseUrl = '/api'
+  }
+
+  /**
+   * Cria uma nova entrada no diário
+   */
+  async createEntry(entryData: CreateDiaryEntryData): Promise<WhatsAppDiaryEntry> {
+    try {
+      const response = await fetch(`${this.baseUrl}/diary-entries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(entryData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao criar entrada')
+      }
+
+      return data.entry
+    } catch (error) {
+      console.error('Erro ao criar entrada do diário:', error)
+      throw error
+    }
   }
 
   /**
@@ -228,4 +270,4 @@ class DiaryApiService {
 }
 
 export const diaryApiService = new DiaryApiService()
-export type { WhatsAppDiaryEntry, DiaryApiResponse, DiaryStats }
+export type { WhatsAppDiaryEntry, DiaryApiResponse, DiaryStats, CreateDiaryEntryData }

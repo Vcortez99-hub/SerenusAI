@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
@@ -11,43 +11,15 @@ import Onboarding from './pages/Onboarding'
 import Login from './pages/Login'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
-// Temporariamente removidos para debug:
-// import DebugPanel from './components/DebugPanel'
-// import { EffectsProvider, useEffects } from './contexts/EffectsContext'
-// import FallingLeaves from './components/FallingLeaves'
-// import EffectsToggle from './components/EffectsToggle'
-// import { useGlobalErrorHandler } from './hooks/useErrorHandler'
 
 const AppContent: React.FC = () => {
-  // Temporariamente removido para debug:
-  // const { leavesEffect } = useEffects()
-  // const { setupGlobalHandlers } = useGlobalErrorHandler()
-  // const [debugPanelVisible, setDebugPanelVisible] = useState(false)
-
   useEffect(() => {
-    // Aplicar background padrão
     document.body.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)'
     document.body.style.transition = 'background 0.5s ease'
-    console.log('Applied default gradient background')
   }, [])
-
-  // Temporariamente removido para debug:
-  // useEffect(() => {
-  //   const cleanup = setupGlobalHandlers()
-  //   return cleanup
-  // }, [setupGlobalHandlers])
 
   return (
     <div className="App relative">
-      {/* Temporariamente removidos para debug: */}
-      {/* <FallingLeaves isActive={leavesEffect} /> */}
-      {/* <EffectsToggle /> */}
-      {/* {process.env.NODE_ENV === 'development' && (
-          <DebugPanel 
-            isVisible={debugPanelVisible} 
-            onToggle={() => setDebugPanelVisible(!debugPanelVisible)} 
-          />
-        )} */}
       <ErrorBoundary>
         <Routes>
           <Route path="/" element={
@@ -104,12 +76,7 @@ const AppContent: React.FC = () => {
 }
 
 function App() {
-  return (
-    // Temporariamente removido EffectsProvider para debug
-    // <EffectsProvider>
-      <AppContent />
-    // </EffectsProvider>
-  )
+  return <AppContent />
 }
 
 export default App

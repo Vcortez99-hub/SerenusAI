@@ -72,6 +72,9 @@ export default function Dashboard() {
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [weeklyActivities, setWeeklyActivities] = useState<Array<{date: string, activity: string, completed: boolean}>>([])
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastMood, setToastMood] = useState<number>(3)
 
   useEffect(() => {
     if (!user) {
@@ -138,27 +141,38 @@ export default function Dashboard() {
     const existingTodayEntry = userData.moodHistory.find(entry => entry.date === today)
     const isUpdatingToday = !!existingTodayEntry
     
+    const newMoodHistory = [
+      ...userData.moodHistory.filter(entry => entry.date !== today),
+      { date: today, mood: moodToday, time }
+    ]
+
+    // Recalcular progresso semanal ao registrar humor
+    const newProgress = calculateWeeklyProgress(weeklyActivities, newMoodHistory)
+
     const updatedUserData = {
       ...userData,
       moodToday: moodToday,
       lastMoodUpdate: today,
-      moodHistory: [
-        ...userData.moodHistory.filter(entry => entry.date !== today),
-        { date: today, mood: moodToday, time }
-      ],
+      moodHistory: newMoodHistory,
+      weeklyProgress: newProgress,
       // Só incrementar streak se for um novo dia, não uma atualização
       currentStreak: isUpdatingToday ? userData.currentStreak : userData.currentStreak + 1
     }
-    
+
     setUserData(updatedUserData)
-    
+
     // Salvar no localStorage
     if (user) {
       const userDataKey = `user_data_${user.id}`
       localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
+      console.log('✅ Dados salvos no localStorage:', userDataKey, updatedUserData)
     }
 
-    alert(isUpdatingToday ? 'Humor atualizado com sucesso! ✨' : 'Humor registrado com sucesso! ✨')
+    // Mostrar toast com o humor selecionado
+    setToastMood(mood)
+    setToastMessage(isUpdatingToday ? 'Humor atualizado com sucesso!' : 'Humor registrado com sucesso!')
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 3000)
   }
 
   const addCustomExercise = () => {
@@ -390,14 +404,23 @@ export default function Dashboard() {
     // Recalcular progresso
     const newProgress = calculateWeeklyProgress(updatedActivities, userData.moodHistory)
     const newStreak = calculateCurrentStreak(updatedActivities)
-    
-    setUserData(prev => ({
-      ...prev,
+
+    const updatedUserData = {
+      ...userData,
       weeklyProgress: newProgress,
       currentStreak: newStreak,
-      totalSessions: prev.totalSessions + 1
-    }))
-    
+      totalSessions: userData.totalSessions + 1
+    }
+
+    setUserData(updatedUserData)
+
+    // Salvar no localStorage
+    if (user) {
+      const userDataKey = `user_data_${user.id}`
+      localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
+      console.log('✅ Atividade completada e dados salvos:', updatedUserData)
+    }
+
     closeActivityModal()
   }
 
@@ -479,7 +502,7 @@ export default function Dashboard() {
               <span className="text-blue-100 text-sm">Progresso Semanal</span>
               <TrendingUp className="w-4 h-4 text-blue-200" />
             </div>
-            <div className="text-2xl font-bold mb-1">{userData.weeklyProgress || 80}%</div>
+            <div className="text-2xl font-bold mb-1">{userData.weeklyProgress || 0}%</div>
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8" />
           </motion.div>
 
@@ -717,12 +740,12 @@ export default function Dashboard() {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-600">Bem-estar Geral</span>
-                  <span className="text-sm font-medium text-gray-900">{userData.weeklyProgress || 80}%</span>
+                  <span className="text-sm font-medium text-gray-900">{userData.weeklyProgress || 0}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${userData.weeklyProgress || 80}%` }}
+                    style={{ width: `${userData.weeklyProgress || 0}%` }}
                   />
                 </div>
               </div>
@@ -914,6 +937,36 @@ export default function Dashboard() {
               </div>
             </motion.div>
           </div>
+        )}
+
+        {/* Toast de Sucesso */}
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+            className="fixed bottom-8 right-8 z-50"
+          >
+            <div className="bg-white rounded-2xl shadow-2xl border-2 border-green-400 p-6 flex items-center space-x-4 min-w-[320px]">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-3xl shadow-lg">
+                  {getMoodEmoji(toastMood)}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-gray-900 text-lg mb-1">{toastMessage}</h4>
+                <p className="text-sm text-gray-600">
+                  Você está se sentindo: <span className="font-semibold text-green-600">{getMoodLabel(toastMood)}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowToast(false)}
+                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

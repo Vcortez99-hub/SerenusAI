@@ -1,6 +1,7 @@
 const axios = require('axios');
 const DiaryStorage = require('./diary-storage');
 const SentimentAnalysisService = require('./sentiment-analysis');
+const UserStorage = require('./user-storage');
 require('dotenv').config();
 
 class WhatsAppService {
@@ -23,6 +24,9 @@ class WhatsAppService {
     
     // Serviço de análise de sentimento
     this.sentimentAnalysis = new SentimentAnalysisService();
+    
+    // Sistema de usuários
+    this.userStorage = new UserStorage();
   }
 
   /**
@@ -93,12 +97,19 @@ class WhatsAppService {
   }
 
   /**
-   * Verifica se um número está autorizado
+   * Verifica se um número está autorizado (registrado na plataforma)
    * @param {string} phoneNumber - Número do telefone
    * @returns {boolean} - True se autorizado
    */
   isAuthorized(phoneNumber) {
-    return this.authorizedNumbers.includes(phoneNumber);
+    // Primeiro verifica se está na lista de números autorizados (admin)
+    if (this.authorizedNumbers.includes(phoneNumber)) {
+      return true;
+    }
+    
+    // Depois verifica se é um usuário registrado na plataforma
+    const user = this.userStorage.getUserByPhone(phoneNumber);
+    return user !== null;
   }
 
   /**
@@ -106,7 +117,7 @@ class WhatsAppService {
    * @param {string} to - Número do destinatário
    */
   async sendUnauthorizedMessage(to) {
-    const unauthorizedMessage = `🔒 *Acesso Não Autorizado*\n\nDesculpe, este número não está autorizado a usar o EssentIA.\n\n📞 *Seu número:* ${to}\n\nPara solicitar acesso, entre em contato com o administrador do sistema.\n\n⚠️ Esta tentativa foi registrada por segurança.`;
+    const unauthorizedMessage = `🔒 *Acesso Não Autorizado*\n\nDesculpe, este número não está registrado na plataforma EssentIA.\n\n📞 *Seu número:* ${to}\n\n🌐 Para usar o diário pelo WhatsApp, você precisa:\n1. Acessar: https://essentia.app\n2. Criar sua conta\n3. Vincular este número no seu perfil\n\n✨ Após o cadastro, você poderá usar o diário diretamente pelo WhatsApp!`;
     
     return await this.sendTextMessage(to, unauthorizedMessage);
   }
@@ -135,35 +146,14 @@ class WhatsAppService {
       authorized: this.isAuthorized(message.from)
     });
 
-    // Verificar autorização primeiro
-    if (!this.isAuthorized(message.from)) {
-      // Se está pendente de autorização e enviou "AUTORIZAR"
-      if (this.pendingAuthorization.has(message.from) && 
-          message.type === 'text' && 
-          message.text?.body.toUpperCase().includes('AUTORIZAR')) {
-        
-        // Adicionar à lista de autorizados (temporariamente na sessão)
-        this.authorizedNumbers.push(message.from);
-        this.pendingAuthorization.delete(message.from);
-        
-        console.log(`✅ Número ${message.from} autorizado com sucesso!`);
-        
-        // Enviar mensagem de boas-vindas
-        await this.sendWelcomeMessage(message.from);
-        return { authorized: true, action: 'welcomed' };
-      }
-      // Se não está pendente, enviar solicitação
-      else if (!this.pendingAuthorization.has(message.from)) {
-        console.log(`🔒 Tentativa de acesso não autorizado: ${message.from}`);
-        await this.sendAuthorizationRequest(message.from);
-        return { authorized: false, action: 'authorization_requested' };
-      }
-      // Se está pendente mas não enviou AUTORIZAR
-      else {
-        const pendingMessage = `⏳ *Autorização Pendente*\n\nPara continuar, responda com *"AUTORIZAR"* se você é o proprietário deste diário.\n\n📞 Seu número: ${message.from}`;
-        await this.sendTextMessage(message.from, pendingMessage);
-        return { authorized: false, action: 'pending_reminder' };
-      }
+    // Verificar se o usuário está registrado na plataforma
+    const user = this.userStorage.getUserByPhone(message.from);
+    const isAdmin = this.authorizedNumbers.includes(message.from);
+    
+    if (!user && !isAdmin) {
+      console.log(`🔒 Número não registrado: ${message.from}`);
+      await this.sendUnauthorizedMessage(message.from);
+      return { authorized: false, action: 'not_registered' };
     }
 
     // Verificar se é uma mensagem de texto
@@ -176,6 +166,8 @@ class WhatsAppService {
         id: message.id,
         content: message.text.body,
         whatsappNumber: message.from,
+        userId: user ? user.id : null,
+        userName: user ? user.name : 'Admin',
         timestamp: new Date(message.timestamp * 1000),
         sentiment: sentimentResult.sentiment,
         sentimentConfidence: sentimentResult.confidence,
@@ -188,7 +180,7 @@ class WhatsAppService {
 
       // Salvar no sistema de persistência
       const savedEntry = await this.diaryStorage.saveEntry(diaryEntry);
-      console.log('Nova entrada de diário salva:', savedEntry);
+      console.log(`📝 Nova entrada de diário salva para ${user ? user.name : 'Admin'}:`, savedEntry);
       
       // Enviar confirmação com análise de sentimento
       await this.sendDiaryConfirmationWithSentiment(message.from, message.text.body, sentimentResult);
@@ -196,7 +188,8 @@ class WhatsAppService {
       return savedEntry;
     } else if (message.type === 'text' && message.text?.body.toLowerCase().includes('ajuda')) {
       // Resposta para mensagens de ajuda
-      const helpMessage = `🆘 *Ajuda - EssentIA Diário*\n\n📝 *Como usar:*\n• Envie qualquer texto para criar uma entrada no diário\n• Use "ajuda" para ver esta mensagem\n• Use "status" para ver informações da conta\n\n✨ *Dicas:*\n• Escreva sobre seus sentimentos, pensamentos ou eventos do dia\n• Não há limite de tamanho para suas entradas\n• Todas as mensagens são privadas e seguras`;
+      const userName = user ? user.name : 'Admin';
+      const helpMessage = `🆘 *Ajuda - EssentIA Diário*\n\nOlá ${userName}! 👋\n\n📝 *Como usar:*\n• Envie qualquer texto para criar uma entrada no diário\n• Use "ajuda" para ver esta mensagem\n• Use "status" para ver informações da conta\n\n✨ *Dicas:*\n• Escreva sobre seus sentimentos, pensamentos ou eventos do dia\n• Não há limite de tamanho para suas entradas\n• Todas as mensagens são privadas e seguras`;
       
       await this.sendTextMessage(message.from, helpMessage);
     } else {

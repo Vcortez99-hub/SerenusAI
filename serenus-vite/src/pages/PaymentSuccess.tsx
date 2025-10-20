@@ -25,17 +25,24 @@ const PaymentSuccess: React.FC = () => {
   useEffect(() => {
     const fetchSessionData = async () => {
       if (!sessionId) {
-        setError('ID da sessão não encontrado');
+        setError('ID da sessão não encontrado na URL');
         setIsLoading(false);
         return;
       }
 
       try {
-        const session = await getCheckoutSession(sessionId);
-        setSessionData(session);
+        console.log('🔍 Buscando dados da sessão:', sessionId);
+        const response = await getCheckoutSession(sessionId);
+        console.log('📦 Resposta da API:', response);
+        
+        if (response.success && response.session) {
+          setSessionData(response.session);
+        } else {
+          setError(response.error || 'Sessão não encontrada');
+        }
       } catch (err) {
-        console.error('Erro ao buscar dados da sessão:', err);
-        setError('Erro ao verificar pagamento');
+        console.error('❌ Erro ao buscar dados da sessão:', err);
+        setError(`Erro ao verificar pagamento: ${err.message || 'Erro desconhecido'}`);
       } finally {
         setIsLoading(false);
       }
@@ -65,18 +72,43 @@ const PaymentSuccess: React.FC = () => {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Erro na Verificação
+            Oops! Algo deu errado
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             {error || 'Não foi possível verificar o status do pagamento.'}
           </p>
-          <Link
-            to="/plans"
-            className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-          >
-            Voltar aos Planos
-            <ArrowRightIcon className="w-4 h-4 ml-2" />
-          </Link>
+          
+          {/* Debug info for development */}
+          {sessionId && (
+            <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6 text-left">
+              <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-2">
+                Informações de Debug:
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                Session ID: {sessionId}
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Verifique o console do navegador para mais detalhes
+              </p>
+            </div>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to="/plans"
+              className="inline-flex items-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Voltar aos Planos
+              <ArrowRightIcon className="w-4 h-4 ml-2" />
+            </Link>
+            
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              Tentar Novamente
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -1,0 +1,22 @@
+# ✅ PROJETO ESSENTIA - RENOMEAÇÃO COMPLETA
+
+## Todas as referências de "Serenus" foram atualizadas para "EssentIA"
+
+### Arquivos Atualizados:
+✅ README.md (novo arquivo principal)
+✅ README_FINAL.md (backup)
+✅ WHATSAPP_SETUP.md
+✅ DEPLOY_RENDER.md
+✅ render.yaml
+✅ RENOMEACAO_COMPLETA.md
+
+### Nome Oficial:
+🌊 **EssentIA** - Plataforma de Bem-Estar Emocional
+
+### Pacotes:
+- Frontend: essentia-vite
+- Backend: essentia-whatsapp-server
+
+### Status: 100% COMPLETO ✅
+
+Tudo pronto para uso e deploy!

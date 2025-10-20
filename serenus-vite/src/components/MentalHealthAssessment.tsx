@@ -173,13 +173,31 @@ const MultiSelectOptions = ({
   )
 }
 
-export default function MentalHealthAssessment({ 
-  data, 
-  onUpdate, 
-  currentStep, 
-  onNext, 
-  onPrev 
+export default function MentalHealthAssessment({
+  data,
+  onUpdate,
+  currentStep,
+  onNext,
+  onPrev
 }: MentalHealthAssessmentProps) {
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1:
+        return data.currentMood > 0 && data.stressLevel > 0 && data.anxietyLevel > 0;
+      case 2:
+        return data.workLifeBalance > 0;
+      case 3:
+        return data.copingStrategies.length > 0 && data.mainConcerns.length > 0;
+      case 4:
+        return data.previousExperience && data.previousExperience.length > 0;
+      case 5:
+        return data.goals.length > 0 && data.preferredSupport.length > 0;
+      default:
+        return true;
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -232,25 +250,7 @@ export default function MentalHealthAssessment({
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Qualidade de vida</h2>
               <p className="text-gray-600">Vamos entender melhor sua rotina e bem-estar</p>
             </div>
-            
-            <ScaleSelector
-              value={data.sleepQuality}
-              onChange={(value) => onUpdate({ sleepQuality: value })}
-              label="Qualidade do sono"
-              icon={<span className="text-lg">😴</span>}
-              lowLabel="Muito ruim"
-              highLabel="Excelente"
-            />
-            
-            <ScaleSelector
-              value={data.energyLevel}
-              onChange={(value) => onUpdate({ energyLevel: value })}
-              label="Nível de energia"
-              icon={<span className="text-lg">⚡</span>}
-              lowLabel="Muito baixo"
-              highLabel="Muito alto"
-            />
-            
+
             <ScaleSelector
               value={data.workLifeBalance}
               onChange={(value) => onUpdate({ workLifeBalance: value })}
@@ -258,15 +258,6 @@ export default function MentalHealthAssessment({
               icon={<span className="text-lg">⚖️</span>}
               lowLabel="Muito desequilibrado"
               highLabel="Muito equilibrado"
-            />
-            
-            <ScaleSelector
-              value={data.socialSupport}
-              onChange={(value) => onUpdate({ socialSupport: value })}
-              label="Suporte social"
-              icon={<Users className="w-5 h-5 text-blue-500" />}
-              lowLabel="Muito isolado"
-              highLabel="Muito conectado"
             />
           </div>
         )
@@ -304,29 +295,13 @@ export default function MentalHealthAssessment({
         return (
           <div className="space-y-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Seus objetivos</h2>
-              <p className="text-gray-600">O que você gostaria de alcançar com o EssentIA?</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Sua experiência</h2>
+              <p className="text-gray-600">Conte-nos um pouco sobre seu histórico</p>
             </div>
-            
-            <MultiSelectOptions
-              options={goalsOptions}
-              selected={data.goals}
-              onChange={(selected) => onUpdate({ goals: selected })}
-              title="Objetivos de bem-estar"
-              subtitle="Selecione até 4 objetivos principais"
-            />
-            
-            <MultiSelectOptions
-              options={supportOptions}
-              selected={data.preferredSupport}
-              onChange={(selected) => onUpdate({ preferredSupport: selected })}
-              title="Tipos de suporte que mais te interessam"
-              subtitle="Como podemos te ajudar melhor?"
-            />
-            
+
             <div className="space-y-3">
               <label className="block text-sm font-medium text-gray-700">Experiência anterior com terapia ou bem-estar mental</label>
               <select
@@ -344,7 +319,36 @@ export default function MentalHealthAssessment({
             </div>
           </div>
         )
-        
+
+      case 5:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Seus objetivos</h2>
+              <p className="text-gray-600">O que você gostaria de alcançar com o EssentIA?</p>
+            </div>
+
+            <MultiSelectOptions
+              options={goalsOptions}
+              selected={data.goals}
+              onChange={(selected) => onUpdate({ goals: selected })}
+              title="Objetivos de bem-estar"
+              subtitle="Selecione até 4 objetivos principais"
+            />
+
+            <MultiSelectOptions
+              options={supportOptions}
+              selected={data.preferredSupport}
+              onChange={(selected) => onUpdate({ preferredSupport: selected })}
+              title="Tipos de suporte que mais te interessam"
+              subtitle="Como podemos te ajudar melhor?"
+            />
+          </div>
+        )
+
       default:
         return null
     }
@@ -375,9 +379,15 @@ export default function MentalHealthAssessment({
         
         <button
           onClick={onNext}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          disabled={!canProceed()}
+          className={cn(
+            "px-6 py-2 rounded-lg transition-colors",
+            canProceed()
+              ? "bg-blue-500 text-white hover:bg-blue-600"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          )}
         >
-          {currentStep === 4 ? 'Finalizar Avaliação' : 'Próximo'}
+          {currentStep === 5 ? 'Finalizar Avaliação' : 'Próximo'}
         </button>
       </div>
     </motion.div>

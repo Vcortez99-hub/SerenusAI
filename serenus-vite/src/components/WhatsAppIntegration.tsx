@@ -176,8 +176,12 @@ const WhatsAppIntegration: React.FC = () => {
                   <input
                     type="tel"
                     value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    placeholder="+55 11 99999-9999"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setPhoneInput(value);
+                    }}
+                    placeholder="5511999999999"
+                    maxLength={13}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                   <button

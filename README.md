@@ -1,10 +1,10 @@
-# 🌊 Serenus - SaaS de IA para Saúde Emocional
+# 🌊 EssentIA - SaaS de IA para Saúde Emocional
 
 **Sua jornada de bem-estar emocional, guiada por IA e cuidado humano**
 
 ## 📋 Visão Geral do Projeto
 
-Serenus é uma plataforma inovadora de saúde emocional que combina Inteligência Artificial com terapia humana e práticas integrativas. O sistema foi projetado como uma ponte entre o autocuidado digital assistido por IA e o acompanhamento profissional personalizado, oferecendo uma experiência única no mercado brasileiro.
+EssentIA é uma plataforma inovadora de saúde emocional que combina Inteligência Artificial com terapia humana e práticas integrativas. O sistema foi projetado como uma ponte entre o autocuidado digital assistido por IA e o acompanhamento profissional personalizado, oferecendo uma experiência única no mercado brasileiro.
 
 ## 🎨 Design System
 

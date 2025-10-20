@@ -2,12 +2,26 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const WhatsAppService = require('./whatsapp');
+const BRDIDService = require('./brdid-service');
+const UserStorage = require('./user-storage');
+const ReminderScheduler = require('./reminder-scheduler');
 const { createCheckoutSession, verifyWebhook, handleWebhookEvent, PLANS } = require('./stripe-config');
+const { initializeDatabase } = require('./db');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const whatsappService = new WhatsAppService();
+const brDidService = new BRDIDService();
+const userStorage = new UserStorage();
+const reminderScheduler = new ReminderScheduler(brDidService, userStorage);
+
+// Inicializar o UserStorage
+userStorage.initialize().then(() => {
+  console.log('✅ UserStorage inicializado com sucesso');
+}).catch(error => {
+  console.error('❌ Erro ao inicializar UserStorage:', error);
+});
 
 // Middleware
 app.use(cors());
@@ -93,6 +107,53 @@ app.get('/health', (req, res) => {
   })
 })
 
+// Rota para criar nova entrada no diário (via frontend)
+app.post('/api/diary-entries', async (req, res) => {
+  try {
+    const { userId, userName, userPhone, title, content, mood, moodScore, tags, gratitude } = req.body;
+
+    if (!userId || !content) {
+      return res.status(400).json({
+        error: 'Campos "userId" e "content" são obrigatórios'
+      });
+    }
+
+    // Criar entrada no formato do backend
+    const diaryEntry = {
+      id: `frontend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      content: content,
+      whatsappNumber: userPhone || 'N/A',
+      userId: userId,
+      userName: userName || 'Usuário',
+      timestamp: new Date(),
+      metadata: {
+        source: 'frontend',
+        title: title || '',
+        mood: mood || 'neutral',
+        moodScore: moodScore || 3,
+        tags: tags || [],
+        gratitude: gratitude || []
+      }
+    };
+
+    const savedEntry = await whatsappService.diaryStorage.saveEntry(diaryEntry);
+
+    console.log(`📝 Nova entrada criada via frontend: ${title || 'Sem título'} (usuário: ${userName})`);
+
+    res.status(201).json({
+      success: true,
+      entry: savedEntry,
+      message: 'Entrada salva com sucesso!'
+    });
+  } catch (error) {
+    console.error('Erro ao criar entrada do diário:', error);
+    res.status(500).json({
+      error: 'Erro ao criar entrada do diário',
+      details: error.message
+    });
+  }
+});
+
 // Rota para listar entradas de diário
 app.get('/api/diary-entries', async (req, res) => {
   try {
@@ -127,20 +188,425 @@ app.get('/api/diary-stats', async (req, res) => {
   }
 });
 
+// ========== USER MANAGEMENT ENDPOINTS ==========
+
+// Rota para criar usuário
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    
+    if (!name || !email || !phone) {
+      return res.status(400).json({ 
+        error: 'Campos "name", "email" e "phone" são obrigatórios' 
+      });
+    }
+    
+    // Verificar se o telefone já está cadastrado
+    if (userStorage.isPhoneRegistered(phone)) {
+      return res.status(409).json({ 
+        error: 'Telefone já cadastrado' 
+      });
+    }
+    
+    // Criar usuário
+    const user = await userStorage.createUser({ name, email, phone });
+
+    console.log(`✅ Usuário criado: ${name} (${phone})`);
+
+    // FLUXO 1: Enviar mensagem de boas-vindas via BR DID ao registrar
+    if (brDidService.isConfigured()) {
+      try {
+        await brDidService.sendWelcomeMessage(phone, name);
+        console.log(`📨 Mensagem de boas-vindas BR DID enviada para ${name} (${phone})`);
+      } catch (error) {
+        console.error(`❌ Erro ao enviar mensagem de boas-vindas BR DID:`, error.message);
+        // Não falhar o registro se a mensagem falhar
+      }
+    } else {
+      console.warn('⚠️ BR DID não configurado - mensagem de boas-vindas não enviada');
+    }
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    res.status(500).json({ 
+      error: 'Erro ao criar usuário', 
+      details: error.message 
+    });
+  }
+});
+
+// Rota para buscar usuário por telefone
+app.get('/api/users/phone/:phone', async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const user = await userStorage.getUserByPhone(phone);
+    
+    if (!user) {
+      return res.status(404).json({ 
+        error: 'Usuário não encontrado' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    res.status(500).json({ 
+      error: 'Erro ao buscar usuário', 
+      details: error.message 
+    });
+  }
+});
+
+// Rota para listar todos os usuários
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await userStorage.getAllUsers();
+    
+    res.json({ 
+      success: true, 
+      users: users.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        createdAt: user.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('Erro ao listar usuários:', error);
+    res.status(500).json({ 
+      error: 'Erro ao listar usuários', 
+      details: error.message 
+    });
+  }
+});
+
 // Rota de teste para enviar mensagem WhatsApp
 app.post('/test-whatsapp', async (req, res) => {
   try {
     const { to, message } = req.body;
-    
+
     if (!to || !message) {
       return res.status(400).json({ error: 'Campos "to" e "message" são obrigatórios' });
     }
-    
+
     const result = await whatsappService.sendTextMessage(to, message);
     res.json({ success: true, result, message: 'Mensagem enviada com sucesso!' });
   } catch (error) {
     console.error('Erro ao enviar mensagem de teste:', error);
     res.status(500).json({ error: 'Erro ao enviar mensagem', details: error.message });
+  }
+});
+
+// ========== Z-API WHATSAPP ENDPOINTS ==========
+
+// Webhook Z-API para receber mensagens
+app.post('/webhook/zapi', async (req, res) => {
+  try {
+    const body = req.body;
+    console.log('📨 Webhook Z-API recebido:', JSON.stringify(body, null, 2));
+
+    // Estrutura Z-API webhook
+    const { phone, fromMe, text, image, messageId, timestamp, instanceId } = body;
+
+    // Ignorar mensagens enviadas por nós
+    if (fromMe) {
+      return res.status(200).json({ received: true });
+    }
+
+    if (!phone || (!text && !image)) {
+      console.warn('⚠️ Webhook Z-API inválido - campos ausentes');
+      return res.status(200).json({ received: true });
+    }
+
+    // Limpar número (remover @s.whatsapp.net se vier)
+    const cleanPhone = phone.replace('@s.whatsapp.net', '').replace('@c.us', '');
+
+    // Verificar se é um usuário registrado
+    const user = await userStorage.getUserByPhone(cleanPhone);
+
+    if (!user) {
+      console.log(`🔒 Número não registrado: ${cleanPhone}`);
+      await brDidService.sendMessage(cleanPhone, '🔒 Olá! Para usar o EssentIA, você precisa criar uma conta em https://essentia.app e vincular este número.');
+      return res.status(200).json({ received: true });
+    }
+
+    const message = text || (image ? '[Imagem recebida]' : '[Mensagem sem texto]');
+    const messageText = message.toLowerCase().trim();
+
+    // FLUXO 4: Comando "Quero conversar" inicia conversa com IA
+    if (messageText.includes('quero conversar')) {
+      console.log(`💬 Iniciando conversa com IA para ${user.name}`);
+      await brDidService.startAIConversation(cleanPhone, user.name);
+      return res.status(200).json({ received: true });
+    }
+
+    // Comando de ajuda
+    if (messageText === 'ajuda') {
+      await brDidService.sendHelpMessage(cleanPhone, user.name);
+      return res.status(200).json({ received: true });
+    }
+
+    // Comando de status
+    if (messageText === 'status') {
+      const entries = await whatsappService.diaryStorage.getAllEntries();
+      const userEntries = entries.filter(entry => entry.whatsappNumber === cleanPhone);
+      const stats = {
+        totalEntries: userEntries.length,
+        lastEntryDate: userEntries.length > 0
+          ? new Date(userEntries[0].timestamp).toLocaleDateString('pt-BR')
+          : 'Nenhuma',
+        streak: 0
+      };
+      await brDidService.sendStatusMessage(cleanPhone, user.name, stats);
+      return res.status(200).json({ received: true });
+    }
+
+    // FLUXO 3: Mensagem normal → criar entrada no diário com análise de sentimento
+    console.log(`📝 Criando entrada de diário para ${user.name}: "${message.substring(0, 50)}..."`);
+
+    // Análise de sentimento
+    const sentimentResult = await whatsappService.sentimentAnalysis.analyzeSentiment(message);
+
+    const diaryEntry = {
+      id: `zapi_${Date.now()}`,
+      content: message,
+      whatsappNumber: cleanPhone,
+      userId: user.id,
+      userName: user.name,
+      timestamp: new Date(timestamp * 1000 || Date.now()),
+      sentiment: sentimentResult.sentiment,
+      sentimentConfidence: sentimentResult.confidence,
+      sentimentExplanation: sentimentResult.explanation,
+      metadata: {
+        source: 'zapi',
+        messageId: messageId,
+        instanceId: instanceId,
+        phoneNumberId: cleanPhone,
+        displayPhoneNumber: cleanPhone
+      }
+    };
+
+    // Salvar no diário
+    const savedEntry = await whatsappService.diaryStorage.saveEntry(diaryEntry);
+    console.log(`✅ Entrada de diário salva:`, savedEntry.id);
+
+    // Enviar confirmação com análise de sentimento
+    await brDidService.sendDiaryConfirmation(cleanPhone, message, sentimentResult);
+
+    res.status(200).json({ received: true, entryId: savedEntry.id });
+  } catch (error) {
+    console.error('❌ Erro ao processar webhook Z-API:', error);
+    res.status(500).json({ error: 'Erro ao processar webhook', details: error.message });
+  }
+});
+
+// Webhook BR DID (genérico) para receber mensagens
+app.post('/webhook/brdid', async (req, res) => {
+  try {
+    const body = req.body;
+    console.log('📨 Webhook BR DID recebido:', JSON.stringify(body, null, 2));
+
+    // Estrutura típica do BR DID webhook
+    const { from, message, timestamp } = body;
+
+    if (!from || !message) {
+      console.warn('⚠️ Webhook BR DID inválido - campos ausentes');
+      return res.status(200).json({ received: true });
+    }
+
+    // Verificar se é um usuário registrado
+    const user = await userStorage.getUserByPhone(from);
+
+    if (!user) {
+      console.log(`🔒 Número não registrado: ${from}`);
+      await brDidService.sendMessage(from, '🔒 Olá! Para usar o EssentIA, você precisa criar uma conta em https://essentia.app e vincular este número.');
+      return res.status(200).json({ received: true });
+    }
+
+    const messageText = message.toLowerCase().trim();
+
+    // FLUXO 4: Comando "Quero conversar" inicia conversa com IA
+    if (messageText.includes('quero conversar')) {
+      console.log(`💬 Iniciando conversa com IA para ${user.name}`);
+      await brDidService.startAIConversation(from, user.name);
+      return res.status(200).json({ received: true });
+    }
+
+    // Comando de ajuda
+    if (messageText === 'ajuda') {
+      await brDidService.sendHelpMessage(from, user.name);
+      return res.status(200).json({ received: true });
+    }
+
+    // Comando de status
+    if (messageText === 'status') {
+      const entries = await whatsappService.diaryStorage.getAllEntries();
+      const userEntries = entries.filter(entry => entry.whatsappNumber === from);
+      const stats = {
+        totalEntries: userEntries.length,
+        lastEntryDate: userEntries.length > 0
+          ? new Date(userEntries[0].timestamp).toLocaleDateString('pt-BR')
+          : 'Nenhuma',
+        streak: 0 // TODO: calcular streak
+      };
+      await brDidService.sendStatusMessage(from, user.name, stats);
+      return res.status(200).json({ received: true });
+    }
+
+    // FLUXO 3: Mensagem normal → criar entrada no diário com análise de sentimento
+    console.log(`📝 Criando entrada de diário para ${user.name}: "${message.substring(0, 50)}..."`);
+
+    // Análise de sentimento
+    const sentimentResult = await whatsappService.sentimentAnalysis.analyzeSentiment(message);
+
+    const diaryEntry = {
+      id: `brdid_${Date.now()}`,
+      content: message,
+      whatsappNumber: from,
+      userId: user.id,
+      userName: user.name,
+      timestamp: new Date(timestamp || Date.now()),
+      sentiment: sentimentResult.sentiment,
+      sentimentConfidence: sentimentResult.confidence,
+      sentimentExplanation: sentimentResult.explanation,
+      metadata: {
+        source: 'brdid',
+        phoneNumberId: 'brdid',
+        displayPhoneNumber: from
+      }
+    };
+
+    // Salvar no diário
+    const savedEntry = await whatsappService.diaryStorage.saveEntry(diaryEntry);
+    console.log(`✅ Entrada de diário salva:`, savedEntry.id);
+
+    // Enviar confirmação com análise de sentimento
+    await brDidService.sendDiaryConfirmation(from, message, sentimentResult);
+
+    res.status(200).json({ received: true, entryId: savedEntry.id });
+  } catch (error) {
+    console.error('❌ Erro ao processar webhook BR DID:', error);
+    res.status(500).json({ error: 'Erro ao processar webhook', details: error.message });
+  }
+});
+
+// FLUXO 2: Endpoint para enviar lembretes
+app.post('/api/send-reminders', async (req, res) => {
+  try {
+    if (!brDidService.isConfigured()) {
+      return res.status(503).json({
+        error: 'BR DID não configurado',
+        sent: 0
+      });
+    }
+
+    const users = await userStorage.getAllUsers();
+    let sentCount = 0;
+    let errors = [];
+
+    console.log(`📤 Enviando lembretes para ${users.length} usuários...`);
+
+    for (const user of users) {
+      try {
+        // Determinar tipo de lembrete baseado na hora
+        const hour = new Date().getHours();
+        let reminderType = 'general';
+
+        if (hour >= 6 && hour < 12) {
+          reminderType = 'morning';
+        } else if (hour >= 12 && hour < 18) {
+          reminderType = 'afternoon';
+        } else if (hour >= 18 || hour < 6) {
+          reminderType = 'evening';
+        }
+
+        await brDidService.sendReminder(user.phone, user.name, reminderType);
+        sentCount++;
+        console.log(`✅ Lembrete enviado para ${user.name} (${user.phone})`);
+      } catch (error) {
+        console.error(`❌ Erro ao enviar lembrete para ${user.name}:`, error.message);
+        errors.push({ user: user.name, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      sent: sentCount,
+      total: users.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('❌ Erro ao enviar lembretes:', error);
+    res.status(500).json({
+      error: 'Erro ao enviar lembretes',
+      details: error.message
+    });
+  }
+});
+
+// Teste de conexão BR DID
+app.get('/api/brdid/test', async (req, res) => {
+  try {
+    const isConnected = await brDidService.testConnection();
+    res.json({
+      success: isConnected,
+      configured: brDidService.isConfigured(),
+      message: isConnected ? 'BR DID conectado com sucesso' : 'Falha na conexão BR DID'
+    });
+  } catch (error) {
+    console.error('Erro ao testar BR DID:', error);
+    res.status(500).json({
+      error: 'Erro ao testar conexão',
+      details: error.message
+    });
+  }
+});
+
+// Teste de envio de mensagem BR DID
+app.post('/api/brdid/test-message', async (req, res) => {
+  try {
+    const { to, message } = req.body;
+
+    if (!to || !message) {
+      return res.status(400).json({
+        error: 'Campos "to" e "message" são obrigatórios'
+      });
+    }
+
+    console.log(`🧪 Testando envio BR DID para ${to}: "${message.substring(0, 50)}..."`);
+
+    const result = await brDidService.sendMessage(to, message);
+
+    res.json({
+      success: true,
+      result,
+      message: 'Mensagem BR DID enviada com sucesso!'
+    });
+  } catch (error) {
+    console.error('❌ Erro no teste BR DID:', error);
+    res.status(500).json({
+      error: 'Erro ao enviar mensagem de teste',
+      details: error.message,
+      response: error.response?.data
+    });
   }
 });
 
@@ -254,16 +720,46 @@ app.get('/stripe/session-status', async (req, res) => {
   }
 });
 
-// Inicializar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor WhatsApp rodando na porta ${PORT}`);
-  console.log(`📱 Webhook URL: http://localhost:${PORT}/webhook`);
-  
-  // Validar configuração do WhatsApp
+// Inicializar banco de dados e servidor
+async function startServer() {
+  try {
+    // Inicializar banco de dados PostgreSQL
+    await initializeDatabase();
+
+    // Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor EssentIA rodando na porta ${PORT}`);
+      console.log(`📱 Webhook WhatsApp Meta: http://localhost:${PORT}/webhook`);
+      console.log(`📱 Webhook Z-API: http://localhost:${PORT}/webhook/zapi`);
+
+  // Validar configuração do WhatsApp Meta
   try {
     whatsappService.validateConfiguration();
   } catch (error) {
-    console.error('❌ Erro na configuração:', error.message);
-    console.log('💡 Verifique o arquivo .env e configure as variáveis necessárias');
+    console.warn('⚠️ WhatsApp Meta não configurado:', error.message);
   }
-});
+
+  // Validar configuração do Z-API
+  if (brDidService.isConfigured()) {
+    console.log('✅ Z-API WhatsApp configurado e pronto para uso');
+    console.log('   - Instance ID: ' + process.env.ZAPI_INSTANCE_ID);
+    console.log('   - Mensagem de boas-vindas: Habilitada');
+    console.log('   - Lembretes: POST /api/send-reminders');
+    console.log('   - Mensagens → Diário: Habilitado');
+    console.log('   - Comando "Quero conversar": Habilitado');
+
+      // Iniciar agendamento automático de lembretes
+      reminderScheduler.start();
+    } else {
+      console.warn('⚠️ Z-API não configurado');
+      console.log('💡 Configure ZAPI_INSTANCE_ID e ZAPI_TOKEN no arquivo .env');
+    }
+    });
+  } catch (error) {
+    console.error('❌ Erro ao inicializar servidor:', error);
+    process.exit(1);
+  }
+}
+
+// Iniciar o servidor
+startServer();

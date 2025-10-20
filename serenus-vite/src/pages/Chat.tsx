@@ -4,6 +4,7 @@ import {
   Send, 
   Brain, 
   Mic, 
+  MicOff,
   Paperclip, 
   MoreHorizontal,
   ArrowLeft,
@@ -12,11 +13,15 @@ import {
   Sparkles,
   Loader2,
   Heart,
-  Zap
+  Zap,
+  Square,
+  Play
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { OpenAIService } from '@/services/openai'
+import { useAudioRecording } from '@/hooks/useAudioRecording'
+import { speechToTextService } from '@/services/speechToText'
 
 interface Message {
   id: string
@@ -48,9 +53,23 @@ export default function Chat() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [isListening, setIsListening] = useState(false)
+  const [transcript, setTranscript] = useState('')
+  const [audioError, setAudioError] = useState<string | null>(null)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const openAIService = useRef<OpenAIService | null>(null)
+  
+  const {
+    isRecording,
+    audioBlob,
+    audioUrl,
+    startRecording,
+    stopRecording,
+    clearRecording,
+    error: recordingError
+  } = useAudioRecording()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -114,6 +133,7 @@ export default function Chat() {
 
     setMessages(prev => [...prev, userMessage])
     setInputValue('')
+    setTranscript('')
     setIsTyping(true)
 
     // Generate AI response
@@ -144,12 +164,78 @@ export default function Chat() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    handleSendMessage(inputValue)
+    const messageToSend = inputValue || transcript
+    if (messageToSend.trim()) {
+      handleSendMessage(messageToSend)
+    }
   }
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSendMessage(suggestion)
   }
+
+  // Funções de áudio
+  const handleMicrophoneClick = async () => {
+    if (isListening) {
+      // Parar reconhecimento de voz
+      speechToTextService.stopListening()
+      setIsListening(false)
+    } else {
+      // Iniciar reconhecimento de voz
+      if (!speechToTextService.isSupported()) {
+        setAudioError('Reconhecimento de voz não é suportado neste navegador')
+        return
+      }
+
+      try {
+        setAudioError(null)
+        setIsListening(true)
+        
+        await speechToTextService.startListening(
+          (transcript, isFinal) => {
+            setTranscript(transcript)
+            if (isFinal) {
+              setInputValue(transcript)
+              setTranscript('')
+              setIsListening(false)
+            }
+          },
+          (error) => {
+            setAudioError(error)
+            setIsListening(false)
+          },
+          () => {
+            setIsListening(false)
+          }
+        )
+      } catch (error) {
+        setAudioError('Erro ao iniciar reconhecimento de voz')
+        setIsListening(false)
+      }
+    }
+  }
+
+  const handleRecordingClick = async () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      try {
+        await startRecording()
+      } catch (error) {
+        setAudioError('Erro ao iniciar gravação')
+      }
+    }
+  }
+
+  // Limpar erros após alguns segundos
+  useEffect(() => {
+    if (audioError || recordingError) {
+      const timer = setTimeout(() => {
+        setAudioError(null)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [audioError, recordingError])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex flex-col">
@@ -298,7 +384,46 @@ export default function Chat() {
 
           {/* Input Area */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-            {!isTyping && inputValue && (
+            {/* Error display */}
+            {(audioError || recordingError) && (
+              <div className="px-4 py-2 bg-red-50 border-b border-red-100">
+                <p className="text-xs text-red-600 flex items-center space-x-1">
+                  <span>⚠️</span>
+                  <span>{audioError || recordingError}</span>
+                </p>
+              </div>
+            )}
+
+            {/* Listening indicator */}
+            {isListening && (
+              <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                <div className="flex items-center space-x-2 text-xs text-blue-600">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span>Escutando... Fale agora</span>
+                </div>
+              </div>
+            )}
+
+            {/* Recording indicator */}
+            {isRecording && (
+              <div className="px-4 py-2 bg-red-50 border-b border-red-100">
+                <div className="flex items-center space-x-2 text-xs text-red-600">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span>Gravando áudio...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Transcript preview */}
+            {transcript && (
+              <div className="px-4 py-2 bg-green-50 border-b border-green-100">
+                <p className="text-xs text-green-600">
+                  <span className="font-medium">Reconhecendo:</span> {transcript}
+                </p>
+              </div>
+            )}
+
+            {!isTyping && (inputValue || transcript) && (
               <div className="px-4 pt-3 pb-1 bg-gradient-to-r from-primary-50 to-green-50 border-b">
                 <div className="flex items-center space-x-2 text-xs text-gray-600">
                   <Zap className="w-3 h-3 text-primary-500" />
@@ -324,29 +449,62 @@ export default function Chat() {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder={isTyping ? "Aguarde a resposta..." : "Como você está se sentindo hoje?"}
+                  placeholder={
+                    isListening 
+                      ? "Escutando..." 
+                      : isRecording 
+                        ? "Gravando..." 
+                        : isTyping 
+                          ? "Aguarde a resposta..." 
+                          : "Como você está se sentindo hoje?"
+                  }
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none placeholder-gray-400"
-                  disabled={isTyping}
+                  disabled={isTyping || isListening}
                 />
               </div>
-              
+
+              {/* Audio recording button */}
               <motion.button
                 type="button"
+                onClick={handleRecordingClick}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors"
+                className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  isRecording
+                    ? "text-red-500 bg-red-50 hover:bg-red-100"
+                    : "text-gray-500 hover:text-red-500 hover:bg-red-50"
+                )}
+                title={isRecording ? "Parar gravação" : "Gravar áudio"}
               >
-                <Mic className="w-5 h-5" />
+                {isRecording ? <Square className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+              </motion.button>
+              
+              {/* Voice recognition button */}
+              <motion.button
+                type="button"
+                onClick={handleMicrophoneClick}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className={cn(
+                  "p-2 rounded-lg transition-colors",
+                  isListening
+                    ? "text-blue-500 bg-blue-50 hover:bg-blue-100"
+                    : "text-gray-500 hover:text-green-500 hover:bg-green-50"
+                )}
+                title={isListening ? "Parar reconhecimento de voz" : "Reconhecimento de voz"}
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </motion.button>
               
               <motion.button
                 type="submit"
-                disabled={!inputValue.trim() || isTyping}
-                whileHover={inputValue.trim() && !isTyping ? { scale: 1.05 } : {}}
-                whileTap={inputValue.trim() && !isTyping ? { scale: 0.95 } : {}}
+                disabled={!(inputValue.trim() || transcript.trim()) || isTyping}
+                whileHover={(inputValue.trim() || transcript.trim()) && !isTyping ? { scale: 1.05 } : {}}
+                whileTap={(inputValue.trim() || transcript.trim()) && !isTyping ? { scale: 0.95 } : {}}
                 className={cn(
                   "p-3 rounded-xl transition-all duration-200 relative overflow-hidden",
-                  inputValue.trim() && !isTyping
+                  (inputValue.trim() || transcript.trim()) && !isTyping
                     ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white hover:shadow-lg hover:shadow-primary-200"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 )}
@@ -358,6 +516,22 @@ export default function Chat() {
                 )}
               </motion.button>
             </form>
+
+            {/* Audio playback */}
+            {audioUrl && (
+              <div className="px-4 pb-4">
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <audio controls src={audioUrl} className="flex-1" />
+                  <button
+                    onClick={clearRecording}
+                    className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                    title="Limpar gravação"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
