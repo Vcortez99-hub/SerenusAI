@@ -2,15 +2,14 @@ services:
   # Backend API
   - type: web
     name: essentia-api
-    env: node
+    runtime: node
     region: oregon
-    buildCommand: cd serenus-vite/server && npm install
-    startCommand: cd serenus-vite/server && node index.js
+    rootDir: serenus-vite/server
+    buildCommand: npm install
+    startCommand: node index.js
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
       - key: DATABASE_URL
         fromDatabase:
           name: essentia-db
@@ -24,24 +23,24 @@ services:
       - key: ZAPI_CLIENT_TOKEN
         sync: false
       - key: ZAPI_WEBHOOK_URL
-        value: https://essentia-api.onrender.com/webhook/zapi
+        sync: false
       - key: FRONTEND_URL
-        value: https://essentia-frontend.onrender.com
+        sync: false
 
   # Frontend (Static Site)
   - type: web
     name: essentia-frontend
-    env: static
+    runtime: static
     region: oregon
-    buildCommand: cd serenus-vite && npm install && npm run build
-    staticPublishPath: serenus-vite/dist
+    rootDir: serenus-vite
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://essentia-api.onrender.com
+        sync: false
 
 # Database
 databases:
   - name: essentia-db
     databaseName: essentia
-    user: essentia_user
     region: oregon
