@@ -1,4 +1,5 @@
 // Serviço para integração com a API do diário WhatsApp
+import { API_BASE_URL, API_FULL_URL } from '@/config/api'
 
 interface WhatsAppDiaryEntry {
   id: string
@@ -53,8 +54,8 @@ class DiaryApiService {
   private baseUrl: string
 
   constructor() {
-    // URL do servidor backend - usar caminho relativo para funcionar com proxy do Vite
-    this.baseUrl = '/api'
+    // URL do servidor backend - usar configuração centralizada
+    this.baseUrl = API_BASE_URL
   }
 
   /**
@@ -261,7 +262,7 @@ class DiaryApiService {
    */
   async checkServerStatus(): Promise<boolean> {
     try {
-      const response = await fetch(`http://localhost:3001/health`)
+      const response = await fetch(`/health`)
       return response.ok
     } catch (error) {
       return false

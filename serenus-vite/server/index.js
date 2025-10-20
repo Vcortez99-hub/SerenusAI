@@ -720,6 +720,41 @@ app.get('/stripe/session-status', async (req, res) => {
   }
 });
 
+// Endpoint para enviar mensagem de teste via WhatsApp
+app.post('/api/send-whatsapp', async (req, res) => {
+  try {
+    const { phone, message, userName } = req.body;
+
+    if (!phone || !message) {
+      return res.status(400).json({
+        error: 'Campos "phone" e "message" são obrigatórios'
+      });
+    }
+
+    if (!brDidService.isConfigured()) {
+      return res.status(503).json({
+        error: 'Z-API não está configurada no servidor'
+      });
+    }
+
+    console.log(`📤 Enviando mensagem de teste para ${userName || phone}...`);
+
+    // Enviar mensagem via Z-API
+    await brDidService.sendMessage(phone, message);
+
+    res.status(200).json({
+      success: true,
+      message: 'Mensagem enviada com sucesso!'
+    });
+  } catch (error) {
+    console.error('❌ Erro ao enviar mensagem WhatsApp:', error);
+    res.status(500).json({
+      error: 'Erro ao enviar mensagem',
+      details: error.message
+    });
+  }
+});
+
 // Inicializar banco de dados e servidor
 async function startServer() {
   try {
