@@ -1,8 +1,14 @@
 const Stripe = require('stripe');
 require('dotenv').config();
 
-// Inicializar Stripe com a chave secreta
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+// Inicializar Stripe com a chave secreta (opcional)
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'your_stripe_secret_key_here') {
+  stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe configurado');
+} else {
+  console.warn('⚠️ Stripe não configurado - funcionalidades de pagamento desabilitadas');
+}
 
 // Configurações dos produtos
 const PLANS = {
@@ -59,6 +65,10 @@ const PLANS = {
  */
 async function createCheckoutSession(planId, customerEmail, successUrl, cancelUrl) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env');
+    }
+
     const plan = PLANS[planId];
     if (!plan) {
       throw new Error(`Plano '${planId}' não encontrado`);
@@ -101,6 +111,10 @@ async function createCheckoutSession(planId, customerEmail, successUrl, cancelUr
  */
 async function setupStripeProducts() {
   try {
+    if (!stripe) {
+      throw new Error('Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env');
+    }
+
     console.log('🔧 Configurando produtos no Stripe...');
 
     // Criar produto de teste
@@ -194,6 +208,10 @@ async function setupStripeProducts() {
  */
 function verifyWebhook(payload, signature) {
   try {
+    if (!stripe) {
+      throw new Error('Stripe não está configurado. Configure STRIPE_SECRET_KEY no .env');
+    }
+
     const event = stripe.webhooks.constructEvent(
       payload,
       signature,
