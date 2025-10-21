@@ -90,9 +90,20 @@ git push origin master
 
 ## Problemas Comuns
 
-### 1. 404 ao recarregar páginas (RESOLVIDO)
-- Arquivo `_redirects` configurado com SPA fallback
-- Render configurado com rewrites no render.yaml
+### 1. 404 ao recarregar páginas (F5)
+**Problema:** O Render Static Sites não suporta `_redirects` como o Netlify.
+
+**Solução A (Recomendada):** Converter frontend para Web Service
+1. No dashboard do Render, vá em `serenusai-1`
+2. Altere de "Static Site" para "Web Service"
+3. Configure:
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npx serve -s dist -l 3000`
+   - Add to package.json: `"serve": "^14.2.0"` nas devDependencies
+
+**Solução B:** Usar Hash Router
+- Modificar o React Router para usar HashRouter ao invés de BrowserRouter
+- Desvantagem: URLs ficam com # (exemplo: `/#/diary`)
 
 ### 2. API não conecta (RESOLVIDO)
 - URLs padronizadas usando `@/config/api.ts`
