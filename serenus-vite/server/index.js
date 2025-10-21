@@ -6,7 +6,12 @@ const BRDIDService = require('./brdid-service');
 const UserStorage = require('./user-storage');
 const ReminderScheduler = require('./reminder-scheduler');
 const { createCheckoutSession, verifyWebhook, handleWebhookEvent, PLANS } = require('./stripe-config');
-const { initializeDatabase } = require('./db');
+
+// Usar SQLite para desenvolvimento local, PostgreSQL para produção
+const dbModule = process.env.NODE_ENV === 'production' 
+  ? require('./db') 
+  : require('./db-sqlite');
+const { initializeDatabase } = dbModule;
 require('dotenv').config();
 
 const app = express();

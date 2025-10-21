@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "id": "frontend_1761004338348_1zofuuf3r",
+    "content": "Esta � uma entrada de teste para verificar se o sistema est� funcionando",
+    "whatsappNumber": "N/A",
+    "userId": "test123",
+    "userName": "Teste",
+    "timestamp": "2025-10-20T23:52:18.348Z",
+    "metadata": {
+      "source": "frontend",
+      "title": "Teste de entrada",
+      "mood": "happy",
+      "moodScore": 4,
+      "tags": [
+        "teste"
+      ],
+      "gratitude": [
+        "Sistema funcionando"
+      ]
+    },
+    "createdAt": "2025-10-20T23:52:18.350Z",
+    "updatedAt": "2025-10-20T23:52:18.350Z"
+  }
+]
