@@ -1,1 +1,9 @@
+# API routes - proxy para o backend
+/api/*  https://essentia-api.onrender.com/api/:splat  200
+/webhook/*  https://essentia-api.onrender.com/webhook/:splat  200
+/stripe/*  https://essentia-api.onrender.com/stripe/:splat  200
+/test-whatsapp  https://essentia-api.onrender.com/test-whatsapp  200
+/health  https://essentia-api.onrender.com/health  200
+
+# SPA fallback - todas as outras rotas vão para o index.html
 /*    /index.html   200

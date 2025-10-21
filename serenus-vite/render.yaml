@@ -5,15 +5,16 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && node index.js
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
     envVars:
       - key: PORT
         value: 3001
       - key: NODE_ENV
         value: production
       - key: FRONTEND_URL
-        sync: false
+        value: https://essentia.onrender.com
       - key: WA_PHONE_NUMBER_ID
         sync: false
       - key: CLOUD_API_ACCESS_TOKEN
@@ -24,4 +25,37 @@ services:
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
+    autoDeploy: true
+
+  # Frontend (SPA)
+  - type: web
+    name: essentia
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: serenus-vite
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://essentia-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://essentia-api.onrender.com/api/:splat
+      - type: rewrite
+        source: /webhook/*
+        destination: https://essentia-api.onrender.com/webhook/:splat
+      - type: rewrite
+        source: /stripe/*
+        destination: https://essentia-api.onrender.com/stripe/:splat
+      - type: rewrite
+        source: /test-whatsapp
+        destination: https://essentia-api.onrender.com/test-whatsapp
+      - type: rewrite
+        source: /health
+        destination: https://essentia-api.onrender.com/health
+      - type: rewrite
+        source: /*
+        destination: /index.html
     autoDeploy: true

@@ -1,14 +1,13 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { API_FULL_URL } from '@/config/api';
 
 // Configuração do Stripe
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_publishable_key_here';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Debug das variáveis de ambiente
 console.log('🔧 Variáveis de ambiente:');
 console.log('- VITE_STRIPE_PUBLISHABLE_KEY:', STRIPE_PUBLISHABLE_KEY ? '✅ Definida' : '❌ Não definida');
-console.log('- VITE_API_URL:', import.meta.env.VITE_API_URL || 'Usando padrão');
-console.log('- API_BASE_URL final:', API_BASE_URL);
+console.log('- API_FULL_URL:', API_FULL_URL);
 
 // Instância do Stripe (singleton)
 let stripePromise: Promise<Stripe | null>;
@@ -57,8 +56,8 @@ interface CheckoutSession {
  */
 export const getPlans = async (): Promise<Plan[]> => {
   try {
-    console.log('🔍 Buscando planos da API:', `${API_BASE_URL}/stripe/plans`);
-    const response = await fetch(`${API_BASE_URL}/stripe/plans`);
+    console.log('🔍 Buscando planos da API:', `${API_FULL_URL}/stripe/plans`);
+    const response = await fetch(`${API_FULL_URL}/stripe/plans`);
     console.log('📡 Resposta da API:', response.status, response.statusText);
     
     const data = await response.json();
@@ -83,7 +82,7 @@ export const createCheckoutSession = async (
   customerEmail: string
 ): Promise<{ url: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/stripe/create-checkout-session`, {
+    const response = await fetch(`${API_FULL_URL}/stripe/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -142,7 +141,7 @@ export const redirectToCheckout = async (
  */
 export const getCheckoutSession = async (sessionId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/stripe/session-status?session_id=${sessionId}`, {
+    const response = await fetch(`${API_FULL_URL}/stripe/session-status?session_id=${sessionId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
