@@ -22,7 +22,7 @@ Serviço: `essentia-api`
 ```bash
 NODE_ENV=production
 PORT=3001
-FRONTEND_URL=https://essentia.onrender.com
+FRONTEND_URL=https://serenusai-1.onrender.com
 
 # WhatsApp (Z-API)
 ZAPI_INSTANCE_ID=seu_instance_id
@@ -43,13 +43,14 @@ CLOUD_API_ACCESS_TOKEN=seu_access_token
 
 ### 2. Frontend (Site Estático)
 
-Serviço: `essentia`
+Serviço: `serenusai-1` (já existente)
 
 **Configurações:**
 - Runtime: Static Site
 - Build Command: `npm install && npm run build`
 - Publish Directory: `dist`
 - Root Directory: `serenus-vite`
+- URL: https://serenusai-1.onrender.com
 
 **Variáveis de Ambiente:**
 ```bash
@@ -116,7 +117,7 @@ curl https://essentia-api.onrender.com/health
 ```
 
 ### 2. Verificar Frontend
-- Acesse https://essentia.onrender.com
+- Acesse https://serenusai-1.onrender.com
 - Navegue entre páginas e recarregue (F5)
 - Todas as rotas devem funcionar
 
