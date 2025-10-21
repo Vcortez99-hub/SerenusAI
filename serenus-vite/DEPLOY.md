@@ -10,7 +10,9 @@ O projeto está dividido em:
 
 ### 1. Backend (API)
 
-Serviço: `essentia-api`
+Serviço: `serenusai` (já existente)
+
+**URL:** https://serenusai.onrender.com
 
 **Configurações:**
 - Runtime: Node
@@ -54,14 +56,16 @@ Serviço: `serenusai-1` (já existente)
 
 **Variáveis de Ambiente:**
 ```bash
-VITE_API_URL=https://essentia-api.onrender.com
+VITE_API_URL=https://serenusai.onrender.com
 VITE_STRIPE_PUBLISHABLE_KEY=sua_chave_publica_stripe
 ```
 
-**Rewrites (já configurados no render.yaml):**
-- `/api/*` → Backend API
-- `/webhook/*` → Backend API
-- `/stripe/*` → Backend API
+**Redirects (configurados no arquivo _redirects):**
+- `/api/*` → https://serenusai.onrender.com/api/*
+- `/webhook/*` → https://serenusai.onrender.com/webhook/*
+- `/stripe/*` → https://serenusai.onrender.com/stripe/*
+- `/test-whatsapp` → https://serenusai.onrender.com/test-whatsapp
+- `/health` → https://serenusai.onrender.com/health
 - `/*` → `/index.html` (SPA fallback)
 
 ## Deploy Manual
@@ -97,7 +101,7 @@ git push origin master
 ### 3. WhatsApp não funciona
 **Checklist:**
 - [ ] Variáveis Z-API configuradas no backend
-- [ ] Webhook configurado no painel Z-API: `https://essentia-api.onrender.com/webhook/zapi`
+- [ ] Webhook configurado no painel Z-API: `https://serenusai.onrender.com/webhook/zapi`
 - [ ] Usuário cadastrado na plataforma com telefone
 - [ ] Número de telefone no formato correto (5511999999999)
 
@@ -112,7 +116,7 @@ git push origin master
 
 ### 1. Verificar Backend
 ```bash
-curl https://essentia-api.onrender.com/health
+curl https://serenusai.onrender.com/health
 # Deve retornar: {"status":"ok","timestamp":"...","uptime":...}
 ```
 
