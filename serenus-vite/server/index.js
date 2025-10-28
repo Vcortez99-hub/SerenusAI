@@ -251,16 +251,22 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Verificar se o email já existe
-    const existingUser = await dbModule.query('SELECT id FROM users WHERE email = $1', [email]);
+    const existingUser = await dbModule.query('SELECT id, email, created_at FROM users WHERE email = $1', [email]);
 
     console.log(`🔍 Verificando email existente: ${existingUser.rows.length} encontrados`);
 
     if (existingUser.rows.length > 0) {
-      console.log(`❌ Email já existe: ${email}`);
+      console.log(`❌ Email já existe no banco:`, {
+        email: existingUser.rows[0].email,
+        id: existingUser.rows[0].id,
+        created_at: existingUser.rows[0].created_at
+      });
       return res.status(409).json({
         error: 'Email já cadastrado'
       });
     }
+
+    console.log(`✅ Email disponível, criando usuário...`);
 
     // Hash da senha (simples - em produção usar bcrypt)
     const passwordHash = Buffer.from(password).toString('base64');
@@ -939,6 +945,63 @@ app.post('/api/send-whatsapp', async (req, res) => {
     console.error('❌ Erro ao enviar mensagem WhatsApp:', error);
     res.status(500).json({
       error: 'Erro ao enviar mensagem',
+      details: error.message
+    });
+  }
+});
+
+// ========== ADMIN ENDPOINTS (TEMPORÁRIO) ==========
+
+// Endpoint para limpar todos os usuários (APENAS PARA DEBUG)
+app.delete('/api/admin/clear-users', async (req, res) => {
+  try {
+    const { confirmPassword } = req.body;
+
+    // Proteção simples
+    if (confirmPassword !== 'LIMPAR_TUDO_2025') {
+      return res.status(403).json({
+        error: 'Senha de confirmação incorreta'
+      });
+    }
+
+    console.log('🗑️  LIMPANDO TODOS OS USUÁRIOS DO BANCO...');
+
+    // Deletar todas as entradas de diário primeiro (foreign key)
+    await dbModule.query('DELETE FROM diary_entries');
+
+    // Deletar todos os usuários
+    const result = await dbModule.query('DELETE FROM users');
+
+    console.log(`✅ ${result.rowCount} usuários deletados com sucesso`);
+
+    res.json({
+      success: true,
+      message: `${result.rowCount} usuários deletados`,
+      note: 'Banco limpo. Agora você pode cadastrar novos usuários.'
+    });
+  } catch (error) {
+    console.error('❌ Erro ao limpar usuários:', error);
+    res.status(500).json({
+      error: 'Erro ao limpar usuários',
+      details: error.message
+    });
+  }
+});
+
+// Endpoint para listar todos os usuários (debug)
+app.get('/api/admin/list-users', async (req, res) => {
+  try {
+    const result = await dbModule.query('SELECT id, name, email, created_at FROM users ORDER BY created_at DESC');
+
+    res.json({
+      success: true,
+      count: result.rows.length,
+      users: result.rows
+    });
+  } catch (error) {
+    console.error('❌ Erro ao listar usuários:', error);
+    res.status(500).json({
+      error: 'Erro ao listar usuários',
       details: error.message
     });
   }
