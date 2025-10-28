@@ -15,6 +15,8 @@ services:
         value: production
       - key: FRONTEND_URL
         value: https://serenusai-1.onrender.com
+      - key: DATABASE_URL
+        value: postgresql://essentia_user:ILTng0T1rHxEoHM0CbodgULI1x2eQXGR@dpg-d40hmtq4d50c73d6glmg-a/essentia_production
       - key: WA_PHONE_NUMBER_ID
         sync: false
       - key: CLOUD_API_ACCESS_TOKEN
@@ -39,6 +41,8 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://essentia-api.onrender.com
+      - key: VITE_OPENAI_API_KEY
+        sync: false
     routes:
       - type: rewrite
         source: /api/*

@@ -354,7 +354,17 @@ export default function Dashboard() {
     const activityScore = Math.min((thisWeekActivities.length / 7) * 100, 100) // Máximo 7 atividades por semana
     const moodScore = Math.min((uniqueMoodDays / 7) * 100, 100) // Máximo 7 dias com registro
 
-    return Math.round((activityScore * 0.6) + (moodScore * 0.4))
+    const totalProgress = Math.round((activityScore * 0.6) + (moodScore * 0.4))
+
+    console.log('📊 Cálculo de Progresso Semanal:', {
+      diasComRegistro: uniqueMoodDays,
+      atividadesCompletas: thisWeekActivities.length,
+      pontuacaoHumor: moodScore,
+      pontuacaoAtividades: activityScore,
+      progressoTotal: totalProgress
+    })
+
+    return totalProgress
   }
 
   const calculateCurrentStreak = (activities: any[]) => {
