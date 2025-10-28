@@ -243,8 +243,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // Verificar se o email já existe
-    const { query } = require('./db');
-    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
+    const existingUser = await dbModule.query('SELECT id FROM users WHERE email = $1', [email]);
 
     if (existingUser.rows.length > 0) {
       return res.status(409).json({
@@ -258,7 +257,7 @@ app.post('/api/auth/register', async (req, res) => {
     // Criar usuário
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const result = await query(
+    const result = await dbModule.query(
       `INSERT INTO users (
         id, name, email, password_hash, phone, goals, preferences, mental_health_data, wellness_score
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -287,7 +286,7 @@ app.post('/api/auth/register', async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        goals: user.goals,
+        goals: user.goals || [],
         preferences: typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences,
         mentalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
         wellnessScore: user.wellness_score ? (typeof user.wellness_score === 'string' ? JSON.parse(user.wellness_score) : user.wellness_score) : null,
@@ -314,8 +313,7 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    const { query } = require('./db');
-    const result = await query(
+    const result = await dbModule.query(
       'SELECT * FROM users WHERE email = $1',
       [email]
     );

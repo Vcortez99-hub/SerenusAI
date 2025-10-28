@@ -22,12 +22,16 @@ async function initializeDatabase() {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           email TEXT UNIQUE NOT NULL,
-          phone TEXT NOT NULL,
+          password_hash TEXT NOT NULL,
+          phone TEXT,
+          goals TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           subscription_plan TEXT DEFAULT 'free',
           subscription_status TEXT DEFAULT 'active',
           stripe_customer_id TEXT,
-          preferences TEXT DEFAULT '{"notifications": true, "privacy": "private", "reminderTime": "20:00"}'
+          preferences TEXT DEFAULT '{"notifications": true, "privacy": "private", "reminderTime": "20:00"}',
+          mental_health_data TEXT,
+          wellness_score TEXT
         );
       `);
 
@@ -75,16 +79,48 @@ async function initializeDatabase() {
 
 /**
  * Executa uma query no banco SQLite
+ * Retorna no formato compatível com PostgreSQL (com .rows)
  */
 function query(sql, params = []) {
   return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
+    // Converter parâmetros do formato PostgreSQL ($1, $2) para SQLite (?, ?)
+    let sqliteSql = sql;
+    let sqliteParams = params;
+
+    if (sql.includes('$')) {
+      sqliteSql = sql.replace(/\$(\d+)/g, '?');
+    }
+
+    // Para INSERT...RETURNING, precisamos adaptar
+    if (sql.toUpperCase().includes('RETURNING')) {
+      const returningMatch = sql.match(/RETURNING\s+(.+)$/i);
+      const returningFields = returningMatch ? returningMatch[1].trim() : '*';
+      sqliteSql = sql.replace(/RETURNING\s+.+$/i, '');
+
+      db.run(sqliteSql, sqliteParams, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          // Buscar o registro inserido
+          const selectSql = `SELECT ${returningFields} FROM users WHERE rowid = ?`;
+          db.get(selectSql, [this.lastID], (err, row) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({ rows: row ? [row] : [], rowCount: this.changes });
+            }
+          });
+        }
+      });
+    } else {
+      db.all(sqliteSql, sqliteParams, (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ rows: rows || [], rowCount: rows ? rows.length : 0 });
+        }
+      });
+    }
   });
 }
 
