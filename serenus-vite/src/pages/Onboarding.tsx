@@ -7,7 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
-import MentalHealthAssessment, { MentalHealthData, calculateWellnessScore } from '@/components/MentalHealthAssessment'
+import EmotionalHealthAssessment, { EmotionalHealthData, calculateWellnessScore } from '@/components/EmotionalHealthAssessment'
 
 interface OnboardingStep {
   id: number
@@ -27,7 +27,7 @@ interface UserData {
     privacy: 'public' | 'private'
     reminderTime: string
   }
-  mentalHealthData: MentalHealthData
+  emotionalHealthData: EmotionalHealthData
   wellnessScore?: {
     overallScore: number
     riskLevel: 'low' | 'moderate' | 'high'
@@ -46,7 +46,7 @@ const initialUserData: UserData = {
     privacy: 'private',
     reminderTime: '20:00'
   },
-  mentalHealthData: {
+  emotionalHealthData: {
     currentMood: 3,
     stressLevel: 3,
     sleepQuality: 3,
@@ -309,10 +309,10 @@ export default function Onboarding() {
         phone: userData.phone,
         goals: userData.goals,
         preferences: userData.preferences,
-        mentalHealthData: userData.mentalHealthData,
+        emotionalHealthData: userData.emotionalHealthData,
         wellnessScore: userData.wellnessScore
       })
-      
+
       if (success) {
         navigate('/dashboard')
       } else {
@@ -328,29 +328,29 @@ export default function Onboarding() {
 
 
   // Componentes já movidos para fora da função principal
-  const [mentalHealthStep, setMentalHealthStep] = useState(1)
-  
-  const updateMentalHealthData = (updates: Partial<MentalHealthData>) => {
+  const [emotionalHealthStep, setEmotionalHealthStep] = useState(1)
+
+  const updateEmotionalHealthData = (updates: Partial<EmotionalHealthData>) => {
     setUserData(prev => ({
       ...prev,
-      mentalHealthData: { ...prev.mentalHealthData, ...updates }
+      emotionalHealthData: { ...prev.emotionalHealthData, ...updates }
     }))
   }
-  
-  const nextMentalHealthStep = () => {
-    if (mentalHealthStep < 5) {
-      setMentalHealthStep(prev => prev + 1)
+
+  const nextEmotionalHealthStep = () => {
+    if (emotionalHealthStep < 5) {
+      setEmotionalHealthStep(prev => prev + 1)
     } else {
       // Calcular pontuação de bem-estar ao finalizar avaliação
-      const wellnessScore = calculateWellnessScore(userData.mentalHealthData)
+      const wellnessScore = calculateWellnessScore(userData.emotionalHealthData)
       setUserData(prev => ({ ...prev, wellnessScore }))
       nextStep()
     }
   }
-  
-  const prevMentalHealthStep = () => {
-    if (mentalHealthStep > 1) {
-      setMentalHealthStep(prev => prev - 1)
+
+  const prevEmotionalHealthStep = () => {
+    if (emotionalHealthStep > 1) {
+      setEmotionalHealthStep(prev => prev - 1)
     } else {
       prevStep()
     }
@@ -359,17 +359,17 @@ export default function Onboarding() {
   const steps: OnboardingStep[] = [
     { id: 1, title: 'Bem-vindo', description: 'Conheça o EssentIA', component: <WelcomeStep /> },
     { id: 2, title: 'Conta', description: 'Crie sua conta', component: <AccountStep userData={userData} updateUserData={updateUserData} /> },
-    { 
-      id: 3, 
-      title: 'Avaliação', 
-      description: 'Panorama de saúde mental', 
+    {
+      id: 3,
+      title: 'Avaliação',
+      description: 'Panorama de saúde emocional',
       component: (
-        <MentalHealthAssessment
-          data={userData.mentalHealthData}
-          onUpdate={updateMentalHealthData}
-          currentStep={mentalHealthStep}
-          onNext={nextMentalHealthStep}
-          onPrev={prevMentalHealthStep}
+        <EmotionalHealthAssessment
+          data={userData.emotionalHealthData}
+          onUpdate={updateEmotionalHealthData}
+          currentStep={emotionalHealthStep}
+          onNext={nextEmotionalHealthStep}
+          onPrev={prevEmotionalHealthStep}
         />
       )
     },

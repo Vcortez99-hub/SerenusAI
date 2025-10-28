@@ -240,7 +240,7 @@ app.get('/api/diary-stats', async (req, res) => {
 // Rota de registro
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, phone, goals, preferences, mentalHealthData, wellnessScore } = req.body;
+    const { name, email, password, phone, goals, preferences, emotionalHealthData, wellnessScore } = req.body;
 
     console.log(`📝 Tentativa de registro: ${email}`);
 
@@ -287,7 +287,7 @@ app.post('/api/auth/register', async (req, res) => {
         phone || null,
         goals || [],
         JSON.stringify(preferences || { notifications: true, privacy: 'private', reminderTime: '20:00' }),
-        JSON.stringify(mentalHealthData || null),
+        JSON.stringify(emotionalHealthData || null),
         JSON.stringify(wellnessScore || null)
       ]
     );
@@ -305,7 +305,7 @@ app.post('/api/auth/register', async (req, res) => {
         phone: user.phone,
         goals: user.goals || [],
         preferences: typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences,
-        mentalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
+        emotionalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
         wellnessScore: user.wellness_score ? (typeof user.wellness_score === 'string' ? JSON.parse(user.wellness_score) : user.wellness_score) : null,
         createdAt: user.created_at
       }
@@ -371,7 +371,7 @@ app.post('/api/auth/login', async (req, res) => {
         phone: user.phone,
         goals: user.goals || [],
         preferences: user.preferences ? (typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences) : {},
-        mentalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
+        emotionalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
         wellnessScore: user.wellness_score ? (typeof user.wellness_score === 'string' ? JSON.parse(user.wellness_score) : user.wellness_score) : null,
         createdAt: user.created_at
       }

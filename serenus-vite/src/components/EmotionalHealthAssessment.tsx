@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Heart, Brain, Users, Clock, Target, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export interface MentalHealthData {
+export interface EmotionalHealthData {
   currentMood: number
   stressLevel: number
   sleepQuality: number
@@ -18,9 +18,9 @@ export interface MentalHealthData {
   preferredSupport: string[]
 }
 
-interface MentalHealthAssessmentProps {
-  data: MentalHealthData
-  onUpdate: (data: Partial<MentalHealthData>) => void
+interface EmotionalHealthAssessmentProps {
+  data: EmotionalHealthData
+  onUpdate: (data: Partial<EmotionalHealthData>) => void
   currentStep: number
   onNext: () => void
   onPrev: () => void
@@ -173,13 +173,13 @@ const MultiSelectOptions = ({
   )
 }
 
-export default function MentalHealthAssessment({
+export default function EmotionalHealthAssessment({
   data,
   onUpdate,
   currentStep,
   onNext,
   onPrev
-}: MentalHealthAssessmentProps) {
+}: EmotionalHealthAssessmentProps) {
 
   const canProceed = () => {
     switch (currentStep) {
@@ -314,7 +314,7 @@ export default function MentalHealthAssessment({
                 <option value="some">Já fiz algumas sessões de terapia</option>
                 <option value="regular">Faço ou já fiz terapia regularmente</option>
                 <option value="self_help">Uso apps ou livros de autoajuda</option>
-                <option value="medication">Uso medicação para saúde mental</option>
+                <option value="medication">Uso medicação para saúde emocional</option>
               </select>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function MentalHealthAssessment({
 }
 
 // Função para calcular pontuação de bem-estar
-export function calculateWellnessScore(data: MentalHealthData): {
+export function calculateWellnessScore(data: EmotionalHealthData): {
   overallScore: number
   riskLevel: 'low' | 'moderate' | 'high'
   recommendations: string[]

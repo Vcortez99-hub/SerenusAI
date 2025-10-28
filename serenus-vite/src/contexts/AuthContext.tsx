@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { MentalHealthData } from '@/components/MentalHealthAssessment'
+import { EmotionalHealthData } from '@/components/EmotionalHealthAssessment'
 
 interface User {
   id: string
@@ -12,7 +12,7 @@ interface User {
     privacy: 'public' | 'private'
     reminderTime: string
   }
-  mentalHealthData?: MentalHealthData
+  emotionalHealthData?: EmotionalHealthData
   wellnessScore?: {
     overallScore: number
     riskLevel: 'low' | 'moderate' | 'high'
@@ -41,7 +41,7 @@ interface RegisterData {
     privacy: 'public' | 'private'
     reminderTime: string
   }
-  mentalHealthData?: MentalHealthData
+  emotionalHealthData?: EmotionalHealthData
   wellnessScore?: {
     overallScore: number
     riskLevel: 'low' | 'moderate' | 'high'
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           phone: userData.phone,
           goals: userData.goals,
           preferences: userData.preferences,
-          mentalHealthData: userData.mentalHealthData,
+          emotionalHealthData: userData.emotionalHealthData,
           wellnessScore: userData.wellnessScore
         })
       })

@@ -55,8 +55,8 @@ export default function Home() {
                 </h1>
                 
                 <p className="text-xl text-gray-600 leading-relaxed">
-                  Combine inteligência artificial avançada com cuidado terapêutico personalizado. 
-                  Acompanhe seu humor, converse com nossa IA e evolua em sua jornada de saúde mental.
+                  Combine inteligência artificial avançada com cuidado terapêutico personalizado.
+                  Acompanhe seu humor, converse com nossa IA e evolua em sua jornada de saúde emocional.
                 </p>
               </div>
 
@@ -189,7 +189,7 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Pronto para transformar sua saúde mental?
+            Pronto para transformar sua saúde emocional?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
             Junte-se a milhares de pessoas que já descobriram o poder da terapia assistida por IA
