@@ -8,11 +8,17 @@ const ReminderScheduler = require('./reminder-scheduler');
 const { createCheckoutSession, verifyWebhook, handleWebhookEvent, PLANS } = require('./stripe-config');
 
 // Usar SQLite para desenvolvimento local, PostgreSQL para produção
-const dbModule = process.env.NODE_ENV === 'production' 
-  ? require('./db') 
-  : require('./db-sqlite');
-const { initializeDatabase } = dbModule;
 require('dotenv').config();
+
+// Detectar qual banco usar baseado na DATABASE_URL
+const usePostgres = process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres');
+const dbModule = usePostgres ? require('./db') : require('./db-sqlite');
+const { initializeDatabase } = dbModule;
+
+console.log('🗄️  Configuração do banco de dados:');
+console.log('   - NODE_ENV:', process.env.NODE_ENV);
+console.log('   - DATABASE_URL configurada:', !!process.env.DATABASE_URL);
+console.log('   - Usando:', usePostgres ? 'PostgreSQL (produção)' : 'SQLite (desenvolvimento)');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -236,6 +242,8 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, phone, goals, preferences, mentalHealthData, wellnessScore } = req.body;
 
+    console.log(`📝 Tentativa de registro: ${email}`);
+
     if (!name || !email || !password) {
       return res.status(400).json({
         error: 'Campos "name", "email" e "password" são obrigatórios'
@@ -245,7 +253,10 @@ app.post('/api/auth/register', async (req, res) => {
     // Verificar se o email já existe
     const existingUser = await dbModule.query('SELECT id FROM users WHERE email = $1', [email]);
 
+    console.log(`🔍 Verificando email existente: ${existingUser.rows.length} encontrados`);
+
     if (existingUser.rows.length > 0) {
+      console.log(`❌ Email já existe: ${email}`);
       return res.status(409).json({
         error: 'Email já cadastrado'
       });
@@ -307,6 +318,8 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log(`🔐 Tentativa de login: ${email}`);
+
     if (!email || !password) {
       return res.status(400).json({
         error: 'Campos "email" e "password" são obrigatórios'
@@ -318,7 +331,10 @@ app.post('/api/auth/login', async (req, res) => {
       [email]
     );
 
+    console.log(`🔍 Usuários encontrados: ${result.rows.length}`);
+
     if (result.rows.length === 0) {
+      console.log(`❌ Email não encontrado: ${email}`);
       return res.status(401).json({
         error: 'Email ou senha incorretos'
       });
@@ -327,7 +343,12 @@ app.post('/api/auth/login', async (req, res) => {
     const user = result.rows[0];
     const passwordHash = Buffer.from(password).toString('base64');
 
+    console.log(`🔑 Comparando senha...`);
+    console.log(`   - Hash recebido: ${passwordHash.substring(0, 20)}...`);
+    console.log(`   - Hash no banco: ${user.password_hash.substring(0, 20)}...`);
+
     if (user.password_hash !== passwordHash) {
+      console.log(`❌ Senha incorreta para: ${email}`);
       return res.status(401).json({
         error: 'Email ou senha incorretos'
       });
@@ -350,7 +371,7 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao fazer login:', error);
+    console.error('❌ Erro ao fazer login:', error);
     res.status(500).json({
       error: 'Erro ao fazer login',
       details: error.message
