@@ -1,9 +1,9 @@
 # API routes - proxy para o backend
-/api/*  https://essentia-api.onrender.com/api/:splat  200
-/webhook/*  https://essentia-api.onrender.com/webhook/:splat  200
-/stripe/*  https://essentia-api.onrender.com/stripe/:splat  200
-/test-whatsapp  https://essentia-api.onrender.com/test-whatsapp  200
-/health  https://essentia-api.onrender.com/health  200
+/api/*  https://serenusai.onrender.com/api/:splat  200
+/webhook/*  https://serenusai.onrender.com/webhook/:splat  200
+/stripe/*  https://serenusai.onrender.com/stripe/:splat  200
+/test-whatsapp  https://serenusai.onrender.com/test-whatsapp  200
+/health  https://serenusai.onrender.com/health  200
 
 # SPA fallback - todas as outras rotas vão para o index.html (cliente-side routing)
 /*    /index.html   200

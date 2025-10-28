@@ -4,7 +4,7 @@ const isDevelopment = import.meta.env.DEV
 const isProduction = import.meta.env.PROD
 
 // URL completa do backend (sem /api)
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://essentia-api.onrender.com'
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://serenusai.onrender.com'
 
 // URL base da API (com /api)
 export const API_BASE_URL = isProduction
