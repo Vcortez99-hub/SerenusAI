@@ -88,8 +88,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
+      // Usar URL da API configurada
+      const API_URL = import.meta.env.VITE_API_URL || 'https://serenusai.onrender.com'
+
+      console.log('🔐 Registrando usuário:', userData.email, 'na API:', API_URL)
+
       // Registrar no backend
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,8 +134,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Usar URL da API configurada
+      const API_URL = import.meta.env.VITE_API_URL || 'https://serenusai.onrender.com'
+
+      console.log('🔐 Fazendo login:', email, 'na API:', API_URL)
+
       // Fazer login no backend
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
