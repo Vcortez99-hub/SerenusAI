@@ -89,22 +89,22 @@ class DiaryApiService {
   }
 
   /**
-   * Busca todas as entradas do diário
+   * Busca todas as entradas do diário (APENAS DO USUÁRIO LOGADO)
    */
-  async getAllEntries(): Promise<WhatsAppDiaryEntry[]> {
+  async getAllEntries(userId: string): Promise<WhatsAppDiaryEntry[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/diary-entries`)
-      
+      const response = await fetch(`${this.baseUrl}/diary-entries?userId=${encodeURIComponent(userId)}`)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data: DiaryApiResponse = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Erro ao buscar entradas')
       }
-      
+
       return data.entries
     } catch (error) {
       console.error('Erro ao buscar entradas do diário:', error)
@@ -113,22 +113,22 @@ class DiaryApiService {
   }
 
   /**
-   * Busca entradas por data específica
+   * Busca entradas por data específica (APENAS DO USUÁRIO LOGADO)
    */
-  async getEntriesByDate(date: string): Promise<WhatsAppDiaryEntry[]> {
+  async getEntriesByDate(date: string, userId: string): Promise<WhatsAppDiaryEntry[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/diary-entries/date/${date}`)
-      
+      const response = await fetch(`${this.baseUrl}/diary-entries/date/${date}?userId=${encodeURIComponent(userId)}`)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data: DiaryApiResponse = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Erro ao buscar entradas por data')
       }
-      
+
       return data.entries
     } catch (error) {
       console.error('Erro ao buscar entradas por data:', error)
@@ -161,11 +161,11 @@ class DiaryApiService {
   }
 
   /**
-   * Exclui uma entrada do diário
+   * Exclui uma entrada do diário (APENAS PRÓPRIAS ENTRADAS)
    */
-  async deleteEntry(entryId: string): Promise<void> {
+  async deleteEntry(entryId: string, userId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/diary-entries/${entryId}`, {
+      const response = await fetch(`${this.baseUrl}/diary-entries/${entryId}?userId=${encodeURIComponent(userId)}`, {
         method: 'DELETE'
       })
 

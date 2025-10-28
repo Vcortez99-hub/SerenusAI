@@ -165,33 +165,60 @@ app.post('/api/diary-entries', async (req, res) => {
   }
 });
 
-// Rota para listar entradas de diário
+// Rota para listar entradas de diário (APENAS DO USUÁRIO LOGADO)
 app.get('/api/diary-entries', async (req, res) => {
   try {
-    const entries = await whatsappService.diaryStorage.getAllEntries();
-    res.json({ success: true, entries, total: entries.length });
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuário não autenticado'
+      });
+    }
+
+    // Buscar apenas entradas do usuário logado
+    const result = await dbModule.query(
+      'SELECT * FROM diary_entries WHERE user_id = $1 ORDER BY timestamp DESC',
+      [userId]
+    );
+
+    res.json({ success: true, entries: result.rows, total: result.rows.length });
   } catch (error) {
     console.error('Erro ao buscar entradas do diário:', error);
     res.status(500).json({ error: 'Erro ao buscar entradas do diário', details: error.message });
   }
 });
 
-// Rota para buscar entradas por data
+// Rota para buscar entradas por data (APENAS DO USUÁRIO LOGADO)
 app.get('/api/diary-entries/date/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    const entries = await whatsappService.diaryStorage.getEntriesByDate(date);
-    res.json({ success: true, entries, total: entries.length, date });
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuário não autenticado'
+      });
+    }
+
+    // Buscar apenas entradas do usuário logado na data específica
+    const result = await dbModule.query(
+      'SELECT * FROM diary_entries WHERE user_id = $1 AND DATE(timestamp) = $2 ORDER BY timestamp DESC',
+      [userId, date]
+    );
+
+    res.json({ success: true, entries: result.rows, total: result.rows.length, date });
   } catch (error) {
     console.error('Erro ao buscar entradas por data:', error);
     res.status(500).json({ error: 'Erro ao buscar entradas por data', details: error.message });
   }
 });
 
-// Rota para excluir entrada do diário
+// Rota para excluir entrada do diário (APENAS PRÓPRIAS ENTRADAS)
 app.delete('/api/diary-entries/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId } = req.query;
 
     if (!id) {
       return res.status(400).json({
@@ -199,15 +226,34 @@ app.delete('/api/diary-entries/:id', async (req, res) => {
       });
     }
 
-    const success = await whatsappService.diaryStorage.deleteEntry(id);
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Usuário não autenticado'
+      });
+    }
 
-    if (!success) {
+    // Verificar se a entrada pertence ao usuário antes de deletar
+    const checkResult = await dbModule.query(
+      'SELECT user_id FROM diary_entries WHERE id = $1',
+      [id]
+    );
+
+    if (checkResult.rows.length === 0) {
       return res.status(404).json({
         error: 'Entrada não encontrada'
       });
     }
 
-    console.log(`🗑️ Entrada excluída: ${id}`);
+    if (checkResult.rows[0].user_id !== userId) {
+      return res.status(403).json({
+        error: 'Você não tem permissão para excluir esta entrada'
+      });
+    }
+
+    // Deletar a entrada
+    await dbModule.query('DELETE FROM diary_entries WHERE id = $1', [id]);
+
+    console.log(`🗑️ Entrada excluída: ${id} (usuário: ${userId})`);
 
     res.json({
       success: true,

@@ -93,7 +93,7 @@ export default function Diary() {
       setIsLoading(true)
 
       try {
-        const serverEntries = await diaryApiService.getAllEntries()
+        const serverEntries = await diaryApiService.getAllEntries(user.id)
         const convertedEntries = serverEntries.map(entry => {
           return diaryApiService.convertToFrontendEntry(entry)
         })
@@ -211,8 +211,8 @@ export default function Diary() {
     }
 
     try {
-      // Excluir do servidor
-      await diaryApiService.deleteEntry(id)
+      // Excluir do servidor (com verificação de propriedade)
+      await diaryApiService.deleteEntry(id, user.id)
 
       // Atualizar lista local
       const updatedEntries = entries.filter(entry => entry.id !== id)
