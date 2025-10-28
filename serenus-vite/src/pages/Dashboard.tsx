@@ -169,7 +169,7 @@ export default function Dashboard() {
     }
 
     // Mostrar toast com o humor selecionado
-    setToastMood(mood)
+    setToastMood(moodToday)
     setToastMessage(isUpdatingToday ? 'Humor atualizado com sucesso!' : 'Humor registrado com sucesso!')
     setShowToast(true)
     setTimeout(() => setShowToast(false), 3000)
@@ -332,27 +332,28 @@ export default function Dashboard() {
   const calculateWeeklyProgress = (activities: any[], moodHistory: any[]) => {
     const now = new Date()
     const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
-    
+
     // Atividades da semana atual
     const thisWeekActivities = activities.filter(activity => {
       const activityDate = new Date(activity.date)
       return activityDate >= weekStart && activity.completed
     })
-    
-    // Humor da semana atual
+
+    // Humor da semana atual (contar apenas dias únicos, não importa o valor)
     const thisWeekMoods = moodHistory.filter(mood => {
       const moodDate = new Date(mood.date)
       return moodDate >= weekStart
     })
-    
+
+    // Contar dias únicos com registro de humor
+    const uniqueMoodDays = new Set(thisWeekMoods.map(mood => mood.date)).size
+
     // Calcular progresso baseado em:
     // - Atividades completadas (60% do peso)
-    // - Consistência do humor (40% do peso)
-    const activityScore = Math.min((thisWeekActivities.length / 7) * 100, 100) // Máximo 1 atividade por dia
-    const moodScore = thisWeekMoods.length > 0 
-      ? (thisWeekMoods.reduce((sum, mood) => sum + mood.mood, 0) / thisWeekMoods.length) * 20 // Converter escala 1-5 para 0-100
-      : 0
-    
+    // - Dias com registro de humor (40% do peso)
+    const activityScore = Math.min((thisWeekActivities.length / 7) * 100, 100) // Máximo 7 atividades por semana
+    const moodScore = Math.min((uniqueMoodDays / 7) * 100, 100) // Máximo 7 dias com registro
+
     return Math.round((activityScore * 0.6) + (moodScore * 0.4))
   }
 

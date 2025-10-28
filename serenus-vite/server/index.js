@@ -229,24 +229,155 @@ app.get('/api/diary-stats', async (req, res) => {
 
 // ========== USER MANAGEMENT ENDPOINTS ==========
 
-// Rota para criar usuário
+// ========== AUTH ENDPOINTS ==========
+
+// Rota de registro
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password, phone, goals, preferences, mentalHealthData, wellnessScore } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        error: 'Campos "name", "email" e "password" são obrigatórios'
+      });
+    }
+
+    // Verificar se o email já existe
+    const { query } = require('./db');
+    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        error: 'Email já cadastrado'
+      });
+    }
+
+    // Hash da senha (simples - em produção usar bcrypt)
+    const passwordHash = Buffer.from(password).toString('base64');
+
+    // Criar usuário
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const result = await query(
+      `INSERT INTO users (
+        id, name, email, password_hash, phone, goals, preferences, mental_health_data, wellness_score
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING id, name, email, phone, goals, preferences, mental_health_data, wellness_score, created_at`,
+      [
+        userId,
+        name,
+        email,
+        passwordHash,
+        phone || null,
+        goals || [],
+        JSON.stringify(preferences || { notifications: true, privacy: 'private', reminderTime: '20:00' }),
+        JSON.stringify(mentalHealthData || null),
+        JSON.stringify(wellnessScore || null)
+      ]
+    );
+
+    const user = result.rows[0];
+
+    console.log(`✅ Usuário registrado: ${name} (${email})`);
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        goals: user.goals,
+        preferences: typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences,
+        mentalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
+        wellnessScore: user.wellness_score ? (typeof user.wellness_score === 'string' ? JSON.parse(user.wellness_score) : user.wellness_score) : null,
+        createdAt: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error);
+    res.status(500).json({
+      error: 'Erro ao registrar usuário',
+      details: error.message
+    });
+  }
+});
+
+// Rota de login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Campos "email" e "password" são obrigatórios'
+      });
+    }
+
+    const { query } = require('./db');
+    const result = await query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        error: 'Email ou senha incorretos'
+      });
+    }
+
+    const user = result.rows[0];
+    const passwordHash = Buffer.from(password).toString('base64');
+
+    if (user.password_hash !== passwordHash) {
+      return res.status(401).json({
+        error: 'Email ou senha incorretos'
+      });
+    }
+
+    console.log(`✅ Login bem-sucedido: ${user.name} (${email})`);
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        goals: user.goals || [],
+        preferences: user.preferences ? (typeof user.preferences === 'string' ? JSON.parse(user.preferences) : user.preferences) : {},
+        mentalHealthData: user.mental_health_data ? (typeof user.mental_health_data === 'string' ? JSON.parse(user.mental_health_data) : user.mental_health_data) : null,
+        wellnessScore: user.wellness_score ? (typeof user.wellness_score === 'string' ? JSON.parse(user.wellness_score) : user.wellness_score) : null,
+        createdAt: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    res.status(500).json({
+      error: 'Erro ao fazer login',
+      details: error.message
+    });
+  }
+});
+
+// Rota para criar usuário (legacy - manter para compatibilidade)
 app.post('/api/users', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
-    
+
     if (!name || !email || !phone) {
-      return res.status(400).json({ 
-        error: 'Campos "name", "email" e "phone" são obrigatórios' 
+      return res.status(400).json({
+        error: 'Campos "name", "email" e "phone" são obrigatórios'
       });
     }
-    
+
     // Verificar se o telefone já está cadastrado
     if (userStorage.isPhoneRegistered(phone)) {
-      return res.status(409).json({ 
-        error: 'Telefone já cadastrado' 
+      return res.status(409).json({
+        error: 'Telefone já cadastrado'
       });
     }
-    
+
     // Criar usuário
     const user = await userStorage.createUser({ name, email, phone });
 
@@ -276,9 +407,9 @@ app.post('/api/users', async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
-    res.status(500).json({ 
-      error: 'Erro ao criar usuário', 
-      details: error.message 
+    res.status(500).json({
+      error: 'Erro ao criar usuário',
+      details: error.message
     });
   }
 });

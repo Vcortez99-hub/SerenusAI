@@ -88,71 +88,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
-      // Verificar se o email já existe
-      const existingUsers = JSON.parse(localStorage.getItem('essentia_users') || '[]')
-      const emailExists = existingUsers.some((u: User) => u.email === userData.email)
-      
-      if (emailExists) {
-        return false // Email já cadastrado
+      // Registrar no backend
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+          phone: userData.phone,
+          goals: userData.goals,
+          preferences: userData.preferences,
+          mentalHealthData: userData.mentalHealthData,
+          wellnessScore: userData.wellnessScore
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Erro ao registrar:', data.error)
+        return false
       }
 
-      // Criar novo usuário
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        goals: userData.goals,
-        preferences: userData.preferences,
-        mentalHealthData: userData.mentalHealthData,
-        wellnessScore: userData.wellnessScore,
-        createdAt: new Date().toISOString()
+      if (data.success && data.user) {
+        // Salvar usuário no localStorage para persistência
+        localStorage.setItem('essentia_current_user', JSON.stringify(data.user))
+        setUser(data.user)
+        return true
       }
 
-      // Salvar senha separadamente (hash simples para demo)
-      const userCredentials = {
-        email: userData.email,
-        password: btoa(userData.password) // Base64 encoding (não é seguro para produção)
-      }
-
-      // Salvar no localStorage
-      const updatedUsers = [...existingUsers, newUser]
-      const credentials = JSON.parse(localStorage.getItem('essentia_credentials') || '[]')
-      const updatedCredentials = [...credentials, userCredentials]
-
-      localStorage.setItem('essentia_users', JSON.stringify(updatedUsers))
-      localStorage.setItem('essentia_credentials', JSON.stringify(updatedCredentials))
-      localStorage.setItem('essentia_current_user', JSON.stringify(newUser))
-
-      // Salvar no backend se o telefone foi fornecido
-      if (userData.phone) {
-        try {
-          // Formatar telefone para o padrão internacional (remover caracteres especiais)
-          const cleanPhone = userData.phone.replace(/\D/g, '')
-          const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`
-          
-          const response = await fetch('/api/users', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              name: userData.name,
-              email: userData.email,
-              phone: formattedPhone
-            })
-          })
-          
-          if (!response.ok) {
-            console.warn('Erro ao salvar usuário no backend, mas continuando com o registro local')
-          }
-        } catch (error) {
-          console.warn('Erro ao conectar com o backend, mas continuando com o registro local:', error)
-        }
-      }
-
-      setUser(newUser)
-      return true
+      return false
     } catch (error) {
       console.error('Erro ao registrar usuário:', error)
       return false
@@ -161,27 +129,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Verificar credenciais
-      const credentials = JSON.parse(localStorage.getItem('essentia_credentials') || '[]')
-      const userCredential = credentials.find((c: any) => 
-        c.email === email && c.password === btoa(password)
-      )
+      // Fazer login no backend
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      })
 
-      if (!userCredential) {
-        return false // Credenciais inválidas
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Erro ao fazer login:', data.error)
+        return false
       }
 
-      // Buscar dados do usuário
-      const users = JSON.parse(localStorage.getItem('essentia_users') || '[]')
-      const userData = users.find((u: User) => u.email === email)
-
-      if (!userData) {
-        return false // Usuário não encontrado
+      if (data.success && data.user) {
+        // Salvar usuário no localStorage para persistência
+        localStorage.setItem('essentia_current_user', JSON.stringify(data.user))
+        setUser(data.user)
+        return true
       }
 
-      localStorage.setItem('essentia_current_user', JSON.stringify(userData))
-      setUser(userData)
-      return true
+      return false
     } catch (error) {
       console.error('Erro ao fazer login:', error)
       return false

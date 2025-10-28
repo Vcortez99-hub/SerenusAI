@@ -24,12 +24,16 @@ async function initializeDatabase() {
         id VARCHAR(255) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        phone VARCHAR(50) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        goals TEXT[],
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         subscription_plan VARCHAR(50) DEFAULT 'free',
         subscription_status VARCHAR(50) DEFAULT 'active',
         stripe_customer_id VARCHAR(255),
-        preferences JSONB DEFAULT '{"notifications": true, "privacy": "private", "reminderTime": "20:00"}'::jsonb
+        preferences JSONB DEFAULT '{"notifications": true, "privacy": "private", "reminderTime": "20:00"}'::jsonb,
+        mental_health_data JSONB,
+        wellness_score JSONB
       );
     `);
 

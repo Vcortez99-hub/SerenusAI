@@ -378,10 +378,20 @@ export default function Onboarding() {
 
   const canProceed = () => {
     switch (currentStep) {
+      case 1:
+        // Bem-vindo - sempre pode avançar
+        return true
       case 2:
-        return userData.name && userData.email && userData.password.length >= 8
+        // Conta - requer nome, email válido e senha >= 8 caracteres
+        return !!(userData.name.trim() &&
+                 userData.email.trim() &&
+                 userData.email.includes('@') &&
+                 userData.password.length >= 8)
       case 3:
-        // Para a avaliação de saúde mental, sempre permitir navegação
+        // Avaliação de saúde mental - só avança quando completar todos os subpassos
+        return mentalHealthStep === 5
+      case 4:
+        // Preferências - sempre pode finalizar
         return true
       default:
         return true
