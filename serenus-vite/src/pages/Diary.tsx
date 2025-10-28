@@ -366,27 +366,29 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                  onClick={handleOpenAnalysis}
                  disabled={entries.length === 0}
                  className={cn(
-                   "flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm",
+                   "hidden sm:flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm text-sm",
                    entries.length === 0
                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
                  )}
                >
                  <BarChart3 className="w-4 h-4" />
-                 <span>Análise do meu Diário</span>
+                 <span className="hidden md:inline">Análise do meu Diário</span>
+                 <span className="md:hidden">Análise</span>
                </button>
-              
+
               <button
                 onClick={() => setShowNewEntryForm(true)}
-                className="flex items-center space-x-2 bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+                className="flex items-center space-x-2 bg-primary-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors text-sm"
               >
                 <Plus className="w-4 h-4" />
-                <span>Nova Entrada</span>
+                <span className="hidden sm:inline">Nova Entrada</span>
+                <span className="sm:hidden">Novo</span>
               </button>
             </div>
           </div>
@@ -728,7 +730,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Como você se sente?
                   </label>
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-5 gap-2 sm:gap-3">
                     {moodOptions.map((option) => (
                       <button
                         key={option.score}
@@ -866,7 +868,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Como você se sente?
                   </label>
-                  <div className="grid grid-cols-5 gap-3">
+                  <div className="grid grid-cols-5 gap-2 sm:gap-3">
                     {moodOptions.map((option) => (
                       <button
                         key={option.score}
@@ -998,18 +1000,18 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
 
               <div className="space-y-6">
                 {/* Estatísticas Rápidas */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{stats.happy}%</div>
-                    <div className="text-sm text-green-700">Dias Felizes</div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.happy}%</div>
+                    <div className="text-xs sm:text-sm text-green-700">Dias Felizes</div>
                   </div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-yellow-600">{stats.neutral}%</div>
-                    <div className="text-sm text-yellow-700">Dias Neutros</div>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.neutral}%</div>
+                    <div className="text-xs sm:text-sm text-yellow-700">Dias Neutros</div>
                   </div>
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-red-600">{stats.sad}%</div>
-                    <div className="text-sm text-red-700">Dias Tristes</div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-4 text-center">
+                    <div className="text-xl sm:text-2xl font-bold text-red-600">{stats.sad}%</div>
+                    <div className="text-xs sm:text-sm text-red-700">Dias Tristes</div>
                   </div>
                 </div>
 

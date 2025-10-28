@@ -150,7 +150,7 @@ const MultiSelectOptions = ({
         <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
         {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {options.map((option) => (
           <button
             key={option.id}

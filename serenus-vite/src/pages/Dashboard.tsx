@@ -455,27 +455,27 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <Link 
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link
                 to="/chat"
-                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="inline-flex items-center px-2 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Chat IA
+                <MessageCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Chat IA</span>
               </Link>
-              <Link 
+              <Link
                 to="/plans"
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+                className="hidden sm:inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
               >
                 <span className="mr-2">💎</span>
                 Planos
               </Link>
-              <button className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+              <button className="hidden md:inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
                 Configurações
               </button>
               <button
                 onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="text-gray-600 hover:text-gray-900 px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
               >
                 Sair
               </button>
@@ -486,23 +486,23 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header com saudação */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-xl font-semibold text-blue-600">V</span>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-lg sm:text-xl font-semibold text-blue-600">V</span>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">☀️ Bom dia</span>
+                <span className="text-xs sm:text-sm text-gray-500">☀️ Bom dia</span>
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">{user.name}</h1>
-              <p className="text-sm text-gray-500">Como você está se sentindo hoje?</p>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">{user.name}</h1>
+              <p className="text-xs sm:text-sm text-gray-500">Como você está se sentindo hoje?</p>
             </div>
           </div>
         </div>
 
         {/* Cards de estatísticas no topo */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
           {/* Progresso Semanal */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -579,7 +579,7 @@ export default function Dashboard() {
               
               <p className="text-gray-600 text-sm mb-6">Registre seu humor e acompanhe sua evolução</p>
               
-              <div className="grid grid-cols-5 gap-4 mb-6">
+              <div className="grid grid-cols-5 gap-2 sm:gap-4 mb-6">
                 {[
                   { mood: 1, label: 'Muito triste', emoji: '😢' },
                   { mood: 2, label: 'Triste', emoji: '😔' },
@@ -597,8 +597,8 @@ export default function Dashboard() {
                         : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
                     )}
                   >
-                    <span className="text-3xl mb-2">{emoji}</span>
-                    <span className="text-xs text-gray-600 font-medium text-center">{label}</span>
+                    <span className="text-2xl sm:text-3xl mb-1 sm:mb-2">{emoji}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-600 font-medium text-center leading-tight">{label}</span>
                   </button>
                 ))}
               </div>
@@ -634,7 +634,7 @@ export default function Dashboard() {
               <p className="text-gray-600 text-sm mb-6">Práticas recomendadas para seu momento atual</p>
 
               {userData.exercises.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {userData.exercises.map((exercise) => (
                     <div
                       key={exercise.id}
@@ -669,7 +669,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div 
                     onClick={() => openActivityModal('meditation')}
                     className="p-4 rounded-xl bg-blue-50 border-2 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
