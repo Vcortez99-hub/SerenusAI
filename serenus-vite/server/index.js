@@ -182,6 +182,40 @@ app.get('/api/diary-entries/date/:date', async (req, res) => {
   }
 });
 
+// Rota para excluir entrada do diário
+app.delete('/api/diary-entries/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        error: 'ID da entrada é obrigatório'
+      });
+    }
+
+    const success = await whatsappService.diaryStorage.deleteEntry(id);
+
+    if (!success) {
+      return res.status(404).json({
+        error: 'Entrada não encontrada'
+      });
+    }
+
+    console.log(`🗑️ Entrada excluída: ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Entrada excluída com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao excluir entrada do diário:', error);
+    res.status(500).json({
+      error: 'Erro ao excluir entrada do diário',
+      details: error.message
+    });
+  }
+});
+
 // Rota para estatísticas do diário
 app.get('/api/diary-stats', async (req, res) => {
   try {

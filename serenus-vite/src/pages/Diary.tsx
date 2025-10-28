@@ -19,7 +19,7 @@ import { Link } from 'react-router-dom'
 import { cn, formatDate, formatTime, moodScoreToCategory, moodCategoryToScore, getMoodScoreLabel, convertDiaryMoodToDashboard, type MoodCategory, type MoodScore } from '@/lib/utils'
 import { useAuth } from '../contexts/AuthContext'
 import { OpenAIService } from '../services/openai'
-import { diaryApiService, type WhatsAppDiaryEntry } from '../services/diary-api'
+import { diaryApiService } from '../services/diary-api'
 
 interface DiaryEntry {
   id: string
@@ -30,8 +30,6 @@ interface DiaryEntry {
   content: string
   tags: string[]
   gratitude?: string[]
-  source?: 'local' | 'whatsapp'  // Origem da entrada
-  whatsappNumber?: string  // Número do WhatsApp (se aplicável)
   createdAt?: string
   updatedAt?: string
 }
@@ -70,8 +68,7 @@ export default function Diary() {
   const [analysisResult, setAnalysisResult] = useState<string>('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null)
-  const [isLoadingWhatsApp, setIsLoadingWhatsApp] = useState(false)
-  const [whatsappError, setWhatsappError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [newEntry, setNewEntry] = useState({
     title: '',
     content: '',
@@ -93,18 +90,12 @@ export default function Diary() {
     if (!user) return
 
     try {
-      // Carregar todas as entradas do servidor (frontend + WhatsApp)
-      setIsLoadingWhatsApp(true)
-      setWhatsappError(null)
+      setIsLoading(true)
 
       try {
         const serverEntries = await diaryApiService.getAllEntries()
         const convertedEntries = serverEntries.map(entry => {
-          const converted = diaryApiService.convertToFrontendEntry(entry)
-          return {
-            ...converted,
-            source: entry.metadata?.source || 'whatsapp' as const
-          }
+          return diaryApiService.convertToFrontendEntry(entry)
         })
 
         // Ordenar por data (mais recente primeiro)
@@ -113,22 +104,20 @@ export default function Diary() {
         setEntries(convertedEntries)
       } catch (apiError) {
         console.warn('Erro ao carregar entradas da API:', apiError)
-        setWhatsappError('Não foi possível conectar ao servidor')
         setEntries([])
       }
     } catch (error) {
       console.error('Erro ao carregar entradas:', error)
     } finally {
-      setIsLoadingWhatsApp(false)
+      setIsLoading(false)
     }
   }
 
-  // Salvar apenas entradas locais no localStorage
+  // Salvar entradas localmente (sincronização)
   const saveLocalEntries = (localEntries: DiaryEntry[]) => {
     if (user) {
       const diaryKey = `diary_entries_${user.id}`
-      const localOnlyEntries = localEntries.filter(entry => entry.source === 'local')
-      localStorage.setItem(diaryKey, JSON.stringify(localOnlyEntries))
+      localStorage.setItem(diaryKey, JSON.stringify(localEntries))
     }
   }
 
@@ -216,11 +205,25 @@ export default function Diary() {
   }
 
   // Excluir entrada
-  const handleDeleteEntry = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+  const handleDeleteEntry = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta entrada?')) {
+      return
+    }
+
+    try {
+      // Excluir do servidor
+      await diaryApiService.deleteEntry(id)
+
+      // Atualizar lista local
       const updatedEntries = entries.filter(entry => entry.id !== id)
-      saveEntries(updatedEntries)
+      setEntries(updatedEntries)
+      saveLocalEntries(updatedEntries)
       setSelectedEntry(null)
+
+      alert('Entrada excluída com sucesso!')
+    } catch (error) {
+      console.error('Erro ao excluir entrada:', error)
+      alert('Erro ao excluir entrada. Tente novamente.')
     }
   }
 
@@ -364,42 +367,6 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
             </div>
             
             <div className="flex items-center space-x-3">
-              {/* Status do WhatsApp */}
-              <div className="flex items-center space-x-2 text-sm">
-                {isLoadingWhatsApp ? (
-                  <div className="flex items-center space-x-2 text-blue-600">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    <span>Carregando WhatsApp...</span>
-                  </div>
-                ) : whatsappError ? (
-                  <div className="flex items-center space-x-2 text-red-600">
-                    <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    <span>WhatsApp offline</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2 text-green-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span>WhatsApp conectado</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Botão de recarregar WhatsApp */}
-              <button
-                onClick={loadAllEntries}
-                disabled={isLoadingWhatsApp}
-                className={cn(
-                  "flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
-                  isLoadingWhatsApp
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                )}
-                title="Recarregar mensagens do WhatsApp"
-              >
-                <Sparkles className={cn("w-4 h-4", isLoadingWhatsApp && "animate-spin")} />
-                <span>Atualizar</span>
-              </button>
-
               <button
                  onClick={handleOpenAnalysis}
                  disabled={entries.length === 0}
@@ -644,12 +611,6 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
                                   <h3 className="font-semibold text-gray-900 truncate">{entry.title}</h3>
-                                  {entry.source === 'whatsapp' && (
-                                    <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium flex-shrink-0">
-                                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                                      <span>WhatsApp</span>
-                                    </div>
-                                  )}
                                 </div>
                                 <span className="text-sm text-gray-500 flex-shrink-0">
                                   {entry.date.toLocaleDateString('pt-BR')}

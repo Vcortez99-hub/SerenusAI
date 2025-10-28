@@ -192,6 +192,13 @@ class DiaryStorage {
   }
 
   /**
+   * Alias para removeEntry (compatibilidade)
+   */
+  async deleteEntry(entryId) {
+    return this.removeEntry(entryId);
+  }
+
+  /**
    * Formata entrada do formato do banco para o formato da aplicação
    * @param {Object} dbEntry - Entrada do banco de dados
    * @returns {Object} - Entrada formatada

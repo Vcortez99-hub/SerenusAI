@@ -142,17 +142,17 @@ class DiaryApiService {
   async getStats(): Promise<DiaryStats> {
     try {
       const response = await fetch(`${this.baseUrl}/diary-stats`)
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
+
       const data: DiaryStatsResponse = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Erro ao buscar estatísticas')
       }
-      
+
       return data.stats
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error)
@@ -161,22 +161,44 @@ class DiaryApiService {
   }
 
   /**
-   * Converte entrada do WhatsApp para formato do frontend
+   * Exclui uma entrada do diário
    */
-  convertToFrontendEntry(whatsappEntry: WhatsAppDiaryEntry) {
+  async deleteEntry(entryId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/diary-entries/${entryId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao excluir entrada')
+      }
+    } catch (error) {
+      console.error('Erro ao excluir entrada do diário:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Converte entrada do servidor para formato do frontend
+   */
+  convertToFrontendEntry(serverEntry: WhatsAppDiaryEntry) {
     return {
-      id: whatsappEntry.id,
-      date: new Date(whatsappEntry.timestamp),
-      title: this.generateTitleFromContent(whatsappEntry.content),
-      content: whatsappEntry.content,
-      mood: this.analyzeMoodFromContent(whatsappEntry.content),
-      moodScore: this.getMoodScoreFromContent(whatsappEntry.content),
-      tags: this.extractTagsFromContent(whatsappEntry.content),
+      id: serverEntry.id,
+      date: new Date(serverEntry.timestamp),
+      title: this.generateTitleFromContent(serverEntry.content),
+      content: serverEntry.content,
+      mood: this.analyzeMoodFromContent(serverEntry.content),
+      moodScore: this.getMoodScoreFromContent(serverEntry.content),
+      tags: this.extractTagsFromContent(serverEntry.content),
       gratitude: [],
-      source: 'whatsapp',
-      whatsappNumber: whatsappEntry.whatsappNumber,
-      createdAt: whatsappEntry.createdAt,
-      updatedAt: whatsappEntry.updatedAt
+      createdAt: serverEntry.createdAt,
+      updatedAt: serverEntry.updatedAt
     }
   }
 
