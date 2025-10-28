@@ -1,0 +1,24 @@
+{
+  "routes": [
+    {
+      "type": "rewrite",
+      "source": "/api/*",
+      "destination": "https://serenusai.onrender.com/api/*"
+    },
+    {
+      "type": "rewrite",
+      "source": "/webhook/*",
+      "destination": "https://serenusai.onrender.com/webhook/*"
+    },
+    {
+      "type": "rewrite",
+      "source": "/stripe/*",
+      "destination": "https://serenusai.onrender.com/stripe/*"
+    },
+    {
+      "type": "rewrite",
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
