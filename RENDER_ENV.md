@@ -2,22 +2,22 @@
 
 ## 🚨 URGENTE - Configure AGORA no Dashboard do Render
 
-### Backend (essentia-api)
+### Backend (serenusai)
 
 1. **DATABASE_URL** - JÁ ESTÁ CONFIGURADO AUTOMATICAMENTE pelo banco de dados
 2. **NODE_ENV** = `production` - JÁ ESTÁ NO render.yaml
 3. **OPENAI_API_KEY** = `sua_chave_openai_aqui` ⚠️ OBRIGATÓRIO
-4. **FRONTEND_URL** = `https://essentia-frontend.onrender.com` (ou URL real do seu frontend)
+4. **FRONTEND_URL** = `https://serenusai-1.onrender.com` ⚠️ OBRIGATÓRIO
 
 #### WhatsApp Z-API (Opcional - para mensagens automáticas)
 5. **ZAPI_INSTANCE_ID** = sua_instance_id
 6. **ZAPI_TOKEN** = seu_token
 7. **ZAPI_CLIENT_TOKEN** = seu_client_token
-8. **ZAPI_WEBHOOK_URL** = `https://essentia-api.onrender.com/webhook/zapi`
+8. **ZAPI_WEBHOOK_URL** = `https://serenusai.onrender.com/webhook/zapi`
 
-### Frontend (essentia-frontend)
+### Frontend (serenusai-1)
 
-1. **VITE_API_URL** = `https://essentia-api.onrender.com` ⚠️ OBRIGATÓRIO
+1. **VITE_API_URL** = `https://serenusai.onrender.com` ⚠️ OBRIGATÓRIO
 2. **VITE_OPENAI_API_KEY** = `sua_chave_openai_aqui` ⚠️ OBRIGATÓRIO
 
 ---
@@ -26,17 +26,17 @@
 
 ### 1. Configure o Backend
 1. Acesse: https://dashboard.render.com
-2. Clique no serviço **essentia-api**
+2. Clique no serviço **serenusai**
 3. Vá em **Environment**
 4. Adicione:
    - `OPENAI_API_KEY` = sua chave OpenAI
-   - `FRONTEND_URL` = URL do frontend (pegar após deploy)
+   - `FRONTEND_URL` = https://serenusai-1.onrender.com
 
 ### 2. Configure o Frontend
-1. Clique no serviço **essentia-frontend**
+1. Clique no serviço **serenusai-1**
 2. Vá em **Environment**
 3. Adicione:
-   - `VITE_API_URL` = https://essentia-api.onrender.com
+   - `VITE_API_URL` = https://serenusai.onrender.com
    - `VITE_OPENAI_API_KEY` = sua chave OpenAI
 
 ### 3. Faça o Deploy
@@ -52,15 +52,15 @@ git push
 
 ## ✅ URLs Finais
 
-- **Frontend**: https://essentia-frontend.onrender.com
-- **Backend API**: https://essentia-api.onrender.com
+- **Frontend**: https://serenusai-1.onrender.com
+- **Backend API**: https://serenusai.onrender.com
 - **Banco de dados**: PostgreSQL gerenciado pelo Render
 
 ---
 
 ## 🔍 Como testar se está funcionando:
 
-1. Abra: https://essentia-frontend.onrender.com
+1. Abra: https://serenusai-1.onrender.com
 2. Cadastre um email: teste@exemplo.com
 3. Senha: teste123
 4. Se criar conta e logar → ✅ FUNCIONOU!
