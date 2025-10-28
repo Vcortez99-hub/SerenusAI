@@ -5,7 +5,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    rootDir: server
+    rootDir: serenus-vite/server
     buildCommand: npm install
     startCommand: node index.js
     envVars:
