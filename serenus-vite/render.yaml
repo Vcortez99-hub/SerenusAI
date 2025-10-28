@@ -29,9 +29,9 @@ services:
         sync: false
     autoDeploy: true
 
-  # Frontend (SPA)
+  # Frontend (SPA) - mantém nome serenusai-1 no Render
   - type: web
-    name: essentia
+    name: serenusai-1
     runtime: static
     region: oregon
     plan: free
