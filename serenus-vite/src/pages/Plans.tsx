@@ -3,56 +3,6 @@ import { motion } from 'framer-motion';
 import { CheckIcon, StarIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import { useStripe, formatPrice, Plan as StripePlan, getPlans } from '../services/stripeService';
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  period: string;
-  description: string;
-  features: string[];
-  popular?: boolean;
-  stripeProductId?: string;
-}
-
-const plans: Plan[] = [
-  {
-    id: 'basic',
-    name: 'Plano Básico',
-    price: 29.90,
-    period: 'mês',
-    description: 'Perfeito para começar sua jornada de bem-estar',
-    features: [
-      'Análise de sentimentos via WhatsApp',
-      'Diário digital personalizado',
-      'Relatórios mensais de humor',
-      'Suporte por email',
-      'Backup automático dos dados',
-      'Acesso ao chat de apoio'
-    ],
-    stripeProductId: 'price_basic_monthly'
-  },
-  {
-    id: 'premium',
-    name: 'Plano Premium',
-    price: 49.90,
-    period: 'mês',
-    description: 'Para quem busca o máximo em autoconhecimento',
-    features: [
-      'Tudo do Plano Básico',
-      'Análise avançada com IA',
-      'Insights personalizados diários',
-      'Relatórios semanais detalhados',
-      'Suporte prioritário 24/7',
-      'Integração com múltiplas plataformas',
-      'Sessões de coaching virtual',
-      'Histórico ilimitado',
-      'Exportação de dados em PDF'
-    ],
-    popular: true,
-    stripeProductId: 'price_premium_monthly'
-  }
-];
-
 const Plans: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
@@ -64,10 +14,15 @@ const Plans: React.FC = () => {
       name: 'Plano Básico',
       price: 29.90,
       currency: 'brl',
+      description: 'Perfeito para começar sua jornada de bem-estar',
+      popular: false,
       features: [
-        'Análise de sentimentos',
+        'Análise de sentimentos via WhatsApp',
         'Diário digital personalizado',
-        'Relatórios mensais de humor'
+        'Relatórios mensais de humor',
+        'Suporte por email',
+        'Backup automático dos dados',
+        'Acesso ao chat de apoio'
       ]
     },
     {
@@ -75,12 +30,18 @@ const Plans: React.FC = () => {
       name: 'Plano Premium',
       price: 49.90,
       currency: 'brl',
+      description: 'Para quem busca o máximo em autoconhecimento',
+      popular: true,
       features: [
-        'Tudo do plano básico',
-        'Análises avançadas com IA',
+        'Tudo do Plano Básico',
+        'Análise avançada com IA',
+        'Insights personalizados diários',
         'Relatórios semanais detalhados',
-        'Integração com outros apps',
-        'Backup automático na nuvem'
+        'Suporte prioritário 24/7',
+        'Integração com múltiplas plataformas',
+        'Sessões de coaching virtual',
+        'Histórico ilimitado',
+        'Exportação de dados em PDF'
       ]
     }
   ]);

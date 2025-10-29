@@ -12,18 +12,6 @@ if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'your_str
 
 // Configurações dos produtos
 const PLANS = {
-  test: {
-    name: 'Plano Teste',
-    priceId: process.env.STRIPE_TEST_PRICE_ID,
-    price: 100, // em centavos (R$ 1,00)
-    currency: 'brl',
-    features: [
-      'Acesso completo por 7 dias',
-      'Análise de sentimentos',
-      'Diário digital personalizado',
-      'Teste todas as funcionalidades'
-    ]
-  },
   basic: {
     name: 'Plano Básico',
     priceId: process.env.STRIPE_BASIC_PRICE_ID,
@@ -117,25 +105,6 @@ async function setupStripeProducts() {
 
     console.log('🔧 Configurando produtos no Stripe...');
 
-    // Criar produto de teste
-    const testProduct = await stripe.products.create({
-      name: PLANS.test.name,
-      description: 'Plano de teste do EssentIA - Experimente por apenas R$ 1,00',
-      metadata: {
-        planId: 'test'
-      }
-    });
-
-    const testPrice = await stripe.prices.create({
-      unit_amount: PLANS.test.price,
-      currency: PLANS.test.currency,
-      recurring: { interval: 'month' },
-      product: testProduct.id,
-      metadata: {
-        planId: 'test'
-      }
-    });
-
     // Criar produto básico
     const basicProduct = await stripe.products.create({
       name: PLANS.basic.name,
@@ -176,15 +145,10 @@ async function setupStripeProducts() {
 
     console.log('✅ Produtos criados com sucesso!');
     console.log('📋 Adicione estas informações ao seu arquivo .env:');
-    console.log(`STRIPE_TEST_PRICE_ID=${testPrice.id}`);
     console.log(`STRIPE_BASIC_PRICE_ID=${basicPrice.id}`);
     console.log(`STRIPE_PREMIUM_PRICE_ID=${premiumPrice.id}`);
 
     return {
-      test: {
-        product: testProduct,
-        price: testPrice
-      },
       basic: {
         product: basicProduct,
         price: basicPrice
