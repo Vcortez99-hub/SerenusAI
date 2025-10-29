@@ -22,6 +22,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn, getMoodColor, getMoodEmoji, getMoodLabel } from '@/lib/utils'
+import ActivityGuide from '@/components/ActivityGuide'
+import { activities } from '@/data/activities'
 
 interface UserData {
   moodToday?: number
@@ -252,72 +254,7 @@ export default function Dashboard() {
     return 'Baixa'
   }
 
-  const activities = {
-    meditation: {
-      title: 'Meditação Guiada',
-      duration: '5-15 min',
-      icon: '🧘‍♀️',
-      color: 'blue',
-      description: 'Uma prática de mindfulness para acalmar a mente e reduzir o estresse.',
-      steps: [
-        'Encontre um local silencioso e confortável',
-        'Sente-se com a coluna ereta, mas relaxada',
-        'Feche os olhos suavemente',
-        'Respire naturalmente e foque na respiração',
-        'Quando a mente divagar, gentilmente retorne o foco à respiração',
-        'Continue por 5-15 minutos'
-      ],
-      benefits: ['Reduz estresse e ansiedade', 'Melhora o foco', 'Promove relaxamento']
-    },
-    breathing: {
-      title: 'Respiração Consciente',
-      duration: '3-10 min',
-      icon: '🌬️',
-      color: 'green',
-      description: 'Técnicas de respiração para regular o sistema nervoso e promover calma.',
-      steps: [
-        'Sente-se confortavelmente com as costas retas',
-        'Coloque uma mão no peito e outra no abdômen',
-        'Inspire lentamente pelo nariz por 4 segundos',
-        'Segure a respiração por 4 segundos',
-        'Expire pela boca por 6 segundos',
-        'Repita o ciclo por 3-10 minutos'
-      ],
-      benefits: ['Reduz ansiedade', 'Melhora oxigenação', 'Ativa o sistema parassimpático']
-    },
-    mindful: {
-      title: 'Pausa Mindful',
-      duration: '2-5 min',
-      icon: '📝',
-      color: 'purple',
-      description: 'Uma pausa consciente para reconectar com o momento presente.',
-      steps: [
-        'Pare o que estiver fazendo',
-        'Respire profundamente 3 vezes',
-        'Observe seus pensamentos sem julgamento',
-        'Note as sensações do seu corpo',
-        'Observe o ambiente ao seu redor',
-        'Retorne às atividades com mais consciência'
-      ],
-      benefits: ['Aumenta consciência', 'Reduz reatividade', 'Melhora clareza mental']
-    },
-    journaling: {
-      title: 'Journaling',
-      duration: '10-20 min',
-      icon: '📖',
-      color: 'orange',
-      description: 'Escrita reflexiva para processar emoções e pensamentos.',
-      steps: [
-        'Pegue um caderno ou abra um documento',
-        'Escreva a data e hora',
-        'Comece com "Como me sinto agora..."',
-        'Escreva livremente sem se preocupar com gramática',
-        'Explore seus pensamentos e emoções',
-        'Termine com uma reflexão ou gratidão'
-      ],
-      benefits: ['Processa emoções', 'Aumenta autoconhecimento', 'Reduz estresse mental']
-    }
-  }
+  // As atividades agora vêm do arquivo activities.ts importado no topo
 
   const openActivityModal = (activityKey: string) => {
     setSelectedActivity(activityKey)
@@ -700,13 +637,13 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <div 
+                  <div
                     onClick={() => openActivityModal('mindful')}
                     className="p-4 rounded-xl bg-purple-50 border-2 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors"
                   >
                     <div className="flex items-center space-x-3 mb-2">
                       <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-sm">📝</span>
+                        <span className="text-white text-sm">🌸</span>
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900">Pausa Mindful</h3>
@@ -715,7 +652,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <div 
+                  <div
                     onClick={() => openActivityModal('journaling')}
                     className="p-4 rounded-xl bg-orange-50 border-2 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors"
                   >
@@ -724,8 +661,23 @@ export default function Dashboard() {
                         <span className="text-white text-sm">📖</span>
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">Journaling</h3>
+                        <h3 className="font-medium text-gray-900">Escrita Terapêutica</h3>
                         <p className="text-sm text-gray-600">10-20 min</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => openActivityModal('grounding')}
+                    className="p-4 rounded-xl bg-green-50 border-2 border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm">🌿</span>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">Ancoragem</h3>
+                        <p className="text-sm text-gray-600">3-7 min</p>
                       </div>
                     </div>
                   </div>
@@ -841,113 +793,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Modal de Atividade */}
-        {isActivityModalOpen && selectedActivity && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="p-6">
-                {/* Header do Modal */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center",
-                      activities[selectedActivity as keyof typeof activities].color === 'blue' && "bg-blue-500",
-                      activities[selectedActivity as keyof typeof activities].color === 'green' && "bg-green-500",
-                      activities[selectedActivity as keyof typeof activities].color === 'purple' && "bg-purple-500",
-                      activities[selectedActivity as keyof typeof activities].color === 'orange' && "bg-orange-500"
-                    )}>
-                      <span className="text-white text-xl">
-                        {activities[selectedActivity as keyof typeof activities].icon}
-                      </span>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {activities[selectedActivity as keyof typeof activities].title}
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        {activities[selectedActivity as keyof typeof activities].duration}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={closeActivityModal}
-                    className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-
-                {/* Descrição */}
-                <div className="mb-6">
-                  <p className="text-gray-700 leading-relaxed">
-                    {activities[selectedActivity as keyof typeof activities].description}
-                  </p>
-                </div>
-
-                {/* Passos */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Como praticar:</h3>
-                  <div className="space-y-3">
-                    {activities[selectedActivity as keyof typeof activities].steps.map((step, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 mt-0.5",
-                          activities[selectedActivity as keyof typeof activities].color === 'blue' && "bg-blue-500",
-                          activities[selectedActivity as keyof typeof activities].color === 'green' && "bg-green-500",
-                          activities[selectedActivity as keyof typeof activities].color === 'purple' && "bg-purple-500",
-                          activities[selectedActivity as keyof typeof activities].color === 'orange' && "bg-orange-500"
-                        )}>
-                          {index + 1}
-                        </div>
-                        <p className="text-gray-700 leading-relaxed">{step}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Benefícios */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Benefícios:</h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {activities[selectedActivity as keyof typeof activities].benefits.map((benefit, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <span className="text-gray-700">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Botões de Ação */}
-                <div className="flex space-x-3">
-                  <button 
-                    onClick={() => completeActivity(selectedActivity!)}
-                    className={cn(
-                      "flex-1 py-3 px-4 rounded-xl text-white font-medium transition-colors flex items-center justify-center space-x-2",
-                      activities[selectedActivity as keyof typeof activities].color === 'blue' && "bg-blue-500 hover:bg-blue-600",
-                      activities[selectedActivity as keyof typeof activities].color === 'green' && "bg-green-500 hover:bg-green-600",
-                      activities[selectedActivity as keyof typeof activities].color === 'purple' && "bg-purple-500 hover:bg-purple-600",
-                      activities[selectedActivity as keyof typeof activities].color === 'orange' && "bg-orange-500 hover:bg-orange-600"
-                    )}
-                  >
-                    <Play className="w-4 h-4" />
-                    <span>Completar Prática</span>
-                  </button>
-                  <button 
-                    onClick={closeActivityModal}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Fechar
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+        {/* Modal de Atividade com Guia Passo a Passo */}
+        {isActivityModalOpen && selectedActivity && activities[selectedActivity] && (
+          <ActivityGuide
+            activity={activities[selectedActivity]}
+            onClose={closeActivityModal}
+            onComplete={() => completeActivity(selectedActivity)}
+          />
         )}
 
         {/* Toast de Sucesso */}
