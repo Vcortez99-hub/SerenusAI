@@ -34,7 +34,7 @@ interface Message {
 const initialMessages: Message[] = [
   {
     id: '1',
-    content: 'Olá! Eu sou a EssentIA, sua assistente de bem-estar emocional especializada. 🌸 Como você está se sentindo hoje? Estou aqui para te escutar e oferecer suporte.',
+    content: 'Olá! Sou a IA Terapêutica com Alma. 🌸\nQuer me contar o que está pesando aí dentro?',
     sender: 'ai',
     timestamp: new Date(),
     type: 'text'
@@ -42,10 +42,10 @@ const initialMessages: Message[] = [
 ]
 
 const quickSuggestions = [
-  { text: 'Estou me sentindo ansioso', icon: '😰', color: 'from-yellow-400 to-orange-500' },
-  { text: 'Preciso de ajuda para relaxar', icon: '🧘‍♀️', color: 'from-blue-400 to-blue-600' },
-  { text: 'Quero fazer um exercício de respiração', icon: '🌸', color: 'from-green-400 to-green-600' },
-  { text: 'Como posso melhorar meu humor?', icon: '💜', color: 'from-purple-400 to-purple-600' }
+  { text: 'Estou me sentindo ansiosa', icon: '😰', color: 'from-yellow-400 to-orange-500' },
+  { text: 'Estou com medo', icon: '😟', color: 'from-blue-400 to-blue-600' },
+  { text: 'Me sinto culpada', icon: '💔', color: 'from-pink-400 to-pink-600' },
+  { text: 'Preciso de um momento de calma', icon: '🌸', color: 'from-green-400 to-green-600' }
 ]
 
 export default function Chat() {
@@ -98,20 +98,26 @@ export default function Chat() {
     } else {
       // Fallback para quando não há API key configurada
       const responses = {
-        ansioso: 'Percebo que você está se sentindo ansioso. Vamos tentar juntos um exercício de respiração? Respire fundo por 4 segundos, segure por 7 e expire por 8. Repita algumas vezes. 🌸',
-        triste: 'Sinto muito que você esteja passando por um momento difícil. É normal sentir tristeza às vezes. Gostaria de conversar sobre o que está te incomodando? 💙',
-        estressado: 'O estresse pode ser desafiador. Uma técnica que pode ajudar é a atenção plena: foque no momento presente, sinta seus pés no chão. Vamos tentar juntos? 🍃',
-        feliz: 'Que maravilhoso saber que você está se sentindo bem! 😊 Momentos de alegria merecem ser celebrados. O que está contribuindo para esse sentimento?',
-        default: 'Obrigada por compartilhar isso comigo. Cada sentimento é válido e importante. Como posso te ajudar hoje? 💚'
+        ansioso: 'Estou aqui com você. Vamos acalmar o corpo primeiro? Respira comigo: 4 segundos inspirando, segura 4, solta em 6. 🌸\nRespira, que vai passar.',
+        triste: 'Eu vejo você. A tristeza também precisa de espaço.\nSeu corpo está te dizendo algo? Vamos escutar juntos? 💙',
+        estressado: 'Voltar para si é sempre um bom caminho.\nColoque a mão no peito. Respira fundo. O que você está tentando controlar agora? 🍃',
+        medo: 'O medo é legítimo, mas não precisa guiar seus passos.\nEsse medo pertence ao presente ou a uma dor antiga?',
+        culpa: 'A culpa costuma vir com um peso que não é só seu.\nVocê fez o melhor que podia com o que tinha naquela época? 💜',
+        feliz: 'Que lindo! Celebre isso. 😊\nVocê merece um amor que começa em você.',
+        default: 'Obrigada por compartilhar. Você não está sozinha.\nQuer me contar o que está mais forte em você agora? 💚'
       }
 
       const lowerMessage = userMessage.toLowerCase()
-      
-      if (lowerMessage.includes('ansioso') || lowerMessage.includes('ansiedade')) {
+
+      if (lowerMessage.includes('ansios') || lowerMessage.includes('ansiedade')) {
         return responses.ansioso
+      } else if (lowerMessage.includes('medo') || lowerMessage.includes('assustada')) {
+        return responses.medo
+      } else if (lowerMessage.includes('culpa') || lowerMessage.includes('culpada')) {
+        return responses.culpa
       } else if (lowerMessage.includes('triste') || lowerMessage.includes('tristeza')) {
         return responses.triste
-      } else if (lowerMessage.includes('estresse') || lowerMessage.includes('estressado')) {
+      } else if (lowerMessage.includes('estresse') || lowerMessage.includes('estressad')) {
         return responses.estressado
       } else if (lowerMessage.includes('feliz') || lowerMessage.includes('alegre') || lowerMessage.includes('bem')) {
         return responses.feliz
@@ -254,8 +260,8 @@ export default function Chat() {
                   <Brain className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold text-gray-900">EssentIA AI</h1>
-                  <p className="text-sm text-gray-600">Assistente de bem-estar</p>
+                  <h1 className="font-semibold text-gray-900">IA com Alma</h1>
+                  <p className="text-sm text-gray-600">por Daniella Vilar</p>
                 </div>
               </div>
             </div>
@@ -299,7 +305,7 @@ export default function Chat() {
                         <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
                           <Brain className="w-3 h-3 text-white" />
                         </div>
-                        <span className="text-xs font-medium text-gray-600">EssentIA AI</span>
+                        <span className="text-xs font-medium text-gray-600">IA com Alma</span>
                       </div>
                     )}
                     
@@ -331,7 +337,7 @@ export default function Chat() {
                     <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
                       <Brain className="w-3 h-3 text-white" />
                     </div>
-                    <span className="text-xs font-medium text-gray-600">EssentIA AI</span>
+                    <span className="text-xs font-medium text-gray-600">IA com Alma</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Loader2 className="w-4 h-4 text-green-500 animate-spin" />
@@ -427,7 +433,7 @@ export default function Chat() {
               <div className="px-4 pt-3 pb-1 bg-gradient-to-r from-primary-50 to-green-50 border-b">
                 <div className="flex items-center space-x-2 text-xs text-gray-600">
                   <Zap className="w-3 h-3 text-primary-500" />
-                  <span>EssentIA está pronta para te ajudar</span>
+                  <span>Estou aqui para te escutar</span>
                   <Heart className="w-3 h-3 text-red-400 animate-pulse" />
                 </div>
               </div>
@@ -456,7 +462,7 @@ export default function Chat() {
                         ? "Gravando..." 
                         : isTyping 
                           ? "Aguarde a resposta..." 
-                          : "Como você está se sentindo hoje?"
+                          : "O que está pesando aí dentro?"
                   }
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none placeholder-gray-400"
                   disabled={isTyping || isListening}
