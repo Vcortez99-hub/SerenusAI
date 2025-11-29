@@ -51,8 +51,6 @@ services:
   - type: web
     name: essentia-frontend
     runtime: static
-    region: oregon
-    plan: free
     rootDir: serenus-vite
     buildCommand: npm install && npm run build
     staticPublishPath: dist
