@@ -118,10 +118,24 @@ class GamificationService {
 
   /**
    * Inicializa tabelas de gamificação
+   * Em produção (PostgreSQL), as tabelas já são criadas em init-database-render.js
    */
   async initializeTables(dbModule) {
+    // Em produção, as tabelas já foram criadas
+    if (process.env.NODE_ENV === 'production') {
+      console.log('✅ Gamification: PostgreSQL (tabelas já criadas)');
+      return Promise.resolve();
+    }
+
     const db = dbModule.db;
 
+    // Verificar se db existe (SQLite)
+    if (!db || !db.run) {
+      console.log('✅ Gamification: PostgreSQL (tabelas já criadas)');
+      return Promise.resolve();
+    }
+
+    // SQLite (desenvolvimento local)
     return new Promise((resolve, reject) => {
       db.serialize(() => {
         // Tabela de pontos do usuário
@@ -166,10 +180,10 @@ class GamificationService {
 
         db.get("SELECT 1", (err) => {
           if (err) {
-            console.error('❌ Erro ao criar tabelas de gamificação:', err);
+            console.error('❌ Erro ao criar tabelas de gamificação SQLite:', err);
             reject(err);
           } else {
-            console.log('✅ Tabelas de gamificação inicializadas');
+            console.log('✅ Tabelas de gamificação SQLite inicializadas');
             resolve();
           }
         });

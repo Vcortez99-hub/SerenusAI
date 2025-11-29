@@ -80,8 +80,21 @@ const AVAILABLE_ACTIVITIES = {
  * Inicializa tabelas de configuração
  */
 function initializeActivityTables(dbModule) {
+  // Em produção, as tabelas já são criadas em init-database-render.js
+  if (process.env.NODE_ENV === 'production') {
+    console.log('✅ Company Activities: PostgreSQL (tabelas já criadas)');
+    return;
+  }
+
   const db = dbModule.db;
 
+  // Verificar se db existe (SQLite)
+  if (!db || !db.run) {
+    console.log('✅ Company Activities: PostgreSQL (tabelas já criadas)');
+    return;
+  }
+
+  // SQLite (desenvolvimento local)
   // Tabela de configurações por empresa
   db.run(`
     CREATE TABLE IF NOT EXISTS company_activity_config (
@@ -110,7 +123,7 @@ function initializeActivityTables(dbModule) {
     }
   });
 
-  console.log('✅ Tabelas de configuração de atividades inicializadas');
+  console.log('✅ Tabelas de configuração de atividades SQLite inicializadas');
 }
 
 /**
