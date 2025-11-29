@@ -137,17 +137,46 @@ serenus/
 - npm ou yarn
 
 ### Instalação
+
 ```bash
-cd serenus
+# Navegar para o diretório do projeto
+cd serenus-vite
+
+# Instalar dependências do frontend
 npm install
+
+# Instalar dependências do backend
+cd server && npm install && cd ..
 ```
 
 ### Desenvolvimento
+
+**Opção 1: Iniciar Frontend e Backend Simultaneamente (Recomendado)**
+```bash
+npm run dev:full
+```
+
+**Opção 2: Iniciar Apenas Frontend**
 ```bash
 npm run dev
 ```
+Acesse: http://localhost:5173
 
-**Nota**: O projeto foi desenvolvido com Node.js 18.16.1, que está ligeiramente abaixo da versão mínima requerida pelo Next.js 14. Para execução completa, recomenda-se atualizar o Node.js para versão 18.17.0 ou superior.
+**Opção 3: Iniciar Apenas Backend**
+```bash
+npm run dev:backend
+```
+Acesse: http://localhost:3001
+
+### Configuração de Ambiente
+
+Copie os arquivos de exemplo e configure suas variáveis:
+```bash
+cp .env.example .env
+cp server/.env.example server/.env
+```
+
+Edite os arquivos `.env` com suas credenciais (OpenAI, WhatsApp, Stripe, etc.).
 
 ## 🎨 Componentes e Padrões
 

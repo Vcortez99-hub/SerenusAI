@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Heart, 
-  Brain, 
-  Calendar, 
-  TrendingUp, 
+import {
+  Heart,
+  Brain,
+  Calendar,
+  TrendingUp,
   MessageCircle,
   Book,
   Clock,
@@ -17,12 +17,24 @@ import {
   Target,
   X,
   Play,
-  Pause
+  Pause,
+  Shield,
+  Users
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn, getMoodColor, getMoodEmoji, getMoodLabel } from '@/lib/utils'
 import ActivityGuide from '@/components/ActivityGuide'
+import OnboardingGuide from '@/components/OnboardingGuide'
+import Confetti from '@/components/Confetti'
+import GamificationBadge from '@/components/GamificationBadge'
+import AchievementsCard from '@/components/AchievementsCard'
+import { Header } from '@/components/layout/Header'
+import LevelUpAnimation from '@/components/LevelUpAnimation'
+import { LevelIndicator } from '@/components/gamification/LevelIndicator'
+import { Serenipet } from '@/components/gamification/Serenipet'
+import { API_BASE_URL } from '@/config/api'
+import * as gamificationApi from '@/services/gamification-api'
 import { activities } from '@/data/activities'
 
 interface UserData {
@@ -73,10 +85,33 @@ export default function Dashboard() {
   const [moodToday, setMoodToday] = useState<number | null>(null)
   const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
-  const [weeklyActivities, setWeeklyActivities] = useState<Array<{date: string, activity: string, completed: boolean}>>([])
+  const [weeklyActivities, setWeeklyActivities] = useState<Array<{ date: string, activity: string, completed: boolean }>>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastMood, setToastMood] = useState<number>(3)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [showLevelUp, setShowLevelUp] = useState(false)
+  const [levelUpData, setLevelUpData] = useState<{ level: number, name: string, color: string } | null>(null)
+  const [availableActivities, setAvailableActivities] = useState<any[]>([])
+
+
+  const dashboardSteps = [
+    {
+      id: 'mood-card',
+      target: '[data-tour="mood-card"]',
+      title: '💚 Bem-vindo ao Essentia!',
+      description: 'Este é seu espaço de bem-estar! Comece registrando como você está se sentindo hoje. É rápido e ajuda você a acompanhar suas emoções.',
+      position: 'bottom' as const
+    },
+    {
+      id: 'activities',
+      target: '[data-tour="activities"]',
+      title: '🎯 Atividades de Bem-Estar',
+      description: 'Explore meditações, exercícios de respiração e outras atividades para melhorar seu dia! Complete uma e veja a mágica acontecer com confete! 🎊',
+      position: 'top' as const
+    }
+  ]
 
   useEffect(() => {
     if (!user) {
@@ -84,26 +119,58 @@ export default function Dashboard() {
       return
     }
 
+    // Verificar se o usuário é admin
+    const checkAdmin = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/check/${user.id}`)
+        const data = await response.json()
+        setIsAdmin(data.isAdmin || false)
+      } catch (error) {
+        console.error('Erro ao verificar admin:', error)
+      }
+    }
+    checkAdmin()
+
+    // Buscar atividades disponíveis para o usuário
+    const fetchUserActivities = async () => {
+      if (!user?.id) return
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/activities/user?userId=${user.id}`)
+        const data = await response.json()
+
+        if (data.success && data.activities) {
+          setAvailableActivities(data.activities)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar atividades:', error)
+        // Fallback: use empty array
+        setAvailableActivities([])
+      }
+    }
+
+    fetchUserActivities()
+
     // Carregar dados do usuário do localStorage
     const userDataKey = `user_data_${user.id}`
     const savedData = localStorage.getItem(userDataKey)
     const savedWeeklyActivities = localStorage.getItem(`weekly_activities_${user.id}`)
-    
+
     const activities = savedWeeklyActivities ? JSON.parse(savedWeeklyActivities) : []
     setWeeklyActivities(activities)
-    
+
     if (savedData) {
       const data = JSON.parse(savedData)
-      
+
       // Migrar dados antigos: aceitar valores 1-5 (escala atual) e 6-10 (escala antiga)
       const validMoodHistory = (data.moodHistory || []).filter((entry: any) => {
         return entry.mood >= 1 && entry.mood <= 10
       })
-      
+
       // Calcular progresso semanal real
       const weeklyProgress = calculateWeeklyProgress(activities, validMoodHistory)
       const currentStreak = calculateCurrentStreak(activities)
-      
+
       const migratedData = {
         ...data,
         moodHistory: validMoodHistory,
@@ -111,12 +178,12 @@ export default function Dashboard() {
         currentStreak,
         totalSessions: activities.filter((a: any) => a.completed).length
       }
-      
+
       // Salvar dados migrados de volta no localStorage
       localStorage.setItem(userDataKey, JSON.stringify(migratedData))
-      
+
       setUserData(migratedData)
-      
+
       // Verificar se já registrou humor hoje e restaurar o valor
       const today = new Date().toISOString().split('T')[0]
       if (migratedData.lastMoodUpdate === today && migratedData.moodToday) {
@@ -134,15 +201,15 @@ export default function Dashboard() {
       alert('Por favor, selecione como você está se sentindo primeiro.')
       return
     }
-    
+
     const today = new Date().toISOString().split('T')[0]
     const now = new Date()
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-    
+
     // Verificar se já existe registro para hoje
     const existingTodayEntry = userData.moodHistory.find(entry => entry.date === today)
     const isUpdatingToday = !!existingTodayEntry
-    
+
     const newMoodHistory = [
       ...userData.moodHistory.filter(entry => entry.date !== today),
       { date: today, mood: moodToday, time }
@@ -170,6 +237,20 @@ export default function Dashboard() {
       console.log('✅ Dados salvos no localStorage:', userDataKey, updatedUserData)
     }
 
+    // Enviar para o backend para log de auditoria
+    if (user) {
+      fetch(`${API_BASE_URL}/mood`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          mood: moodToday,
+          moodScore: moodToday,
+          time
+        })
+      }).catch(err => console.error('Erro ao logar humor:', err));
+    }
+
     // Mostrar toast com o humor selecionado
     setToastMood(moodToday)
     setToastMessage(isUpdatingToday ? 'Humor atualizado com sucesso!' : 'Humor registrado com sucesso!')
@@ -180,7 +261,7 @@ export default function Dashboard() {
   const addCustomExercise = () => {
     const title = prompt('Nome do exercício:')
     const duration = prompt('Duração (ex: 5 min):')
-    
+
     if (title && duration) {
       const newExercise: Exercise = {
         id: Date.now().toString(),
@@ -190,14 +271,14 @@ export default function Dashboard() {
         completed: false,
         icon: '🧘‍♀️'
       }
-      
+
       const updatedUserData = {
         ...userData,
         exercises: [...userData.exercises, newExercise]
       }
-      
+
       setUserData(updatedUserData)
-      
+
       if (user) {
         const userDataKey = `user_data_${user.id}`
         localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
@@ -217,14 +298,14 @@ export default function Dashboard() {
       }
       return ex
     })
-    
+
     const updatedUserData = {
       ...userData,
       exercises: updatedExercises
     }
-    
+
     setUserData(updatedUserData)
-    
+
     if (user) {
       const userDataKey = `user_data_${user.id}`
       localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
@@ -253,8 +334,6 @@ export default function Dashboard() {
     if (moodToday >= 4) return 'Média'
     return 'Baixa'
   }
-
-  // As atividades agora vêm do arquivo activities.ts importado no topo
 
   const openActivityModal = (activityKey: string) => {
     setSelectedActivity(activityKey)
@@ -306,23 +385,23 @@ export default function Dashboard() {
 
   const calculateCurrentStreak = (activities: any[]) => {
     if (activities.length === 0) return 0
-    
+
     const sortedActivities = activities
       .filter(a => a.completed)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    
+
     if (sortedActivities.length === 0) return 0
-    
+
     let streak = 0
     let currentDate = new Date()
     currentDate.setHours(0, 0, 0, 0)
-    
+
     for (const activity of sortedActivities) {
       const activityDate = new Date(activity.date)
       activityDate.setHours(0, 0, 0, 0)
-      
+
       const daysDiff = Math.floor((currentDate.getTime() - activityDate.getTime()) / (1000 * 60 * 60 * 24))
-      
+
       if (daysDiff === streak) {
         streak++
         currentDate.setDate(currentDate.getDate() - 1)
@@ -330,25 +409,25 @@ export default function Dashboard() {
         break
       }
     }
-    
+
     return streak
   }
 
-  const completeActivity = (activityKey: string) => {
+  const completeActivity = async (activityKey: string) => {
     const newActivity = {
       date: new Date().toISOString(),
       activity: activityKey,
       completed: true
     }
-    
+
     const updatedActivities = [...weeklyActivities, newActivity]
     setWeeklyActivities(updatedActivities)
-    
+
     // Salvar no localStorage
     if (user) {
       localStorage.setItem(`weekly_activities_${user.id}`, JSON.stringify(updatedActivities))
     }
-    
+
     // Recalcular progresso
     const newProgress = calculateWeeklyProgress(updatedActivities, userData.moodHistory)
     const newStreak = calculateCurrentStreak(updatedActivities)
@@ -367,59 +446,43 @@ export default function Dashboard() {
       const userDataKey = `user_data_${user.id}`
       localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
       console.log('✅ Atividade completada e dados salvos:', updatedUserData)
+
+      // 🎮 Registrar atividade no backend de gamificação
+      try {
+        const activityName = availableActivities.find(a => a.id === activityKey)?.title || activityKey
+        const result = await gamificationApi.completeActivity(user.id, activityKey, activityName)
+
+        console.log('🎮 Gamificação:', result)
+
+        // Verificar se subiu de nível
+        if (result.gamification.leveledUp && result.gamification.newLevel) {
+          setLevelUpData({
+            level: parseInt(result.gamification.newLevel.split(' ')[1]) || 0,
+            name: result.gamification.newLevel,
+            color: result.gamification.levelColor || '#a855f7'
+          })
+          setShowLevelUp(true)
+        }
+
+        // Mostrar conquistas desbloqueadas
+        if (result.gamification.achievements.length > 0) {
+          console.log('🏆 Conquistas:', result.gamification.achievements.map(a => a.achievement.name))
+        }
+      } catch (error) {
+        console.error('Erro ao registrar gamificação:', error)
+      }
     }
+
+    // Mostrar confete ao completar atividade
+    setShowConfetti(true)
+    setTimeout(() => setShowConfetti(false), 3000)
 
     closeActivityModal()
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link to="/" className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-                <ArrowLeft className="w-5 h-5" />
-                <span>Voltar</span>
-              </Link>
-              <div className="h-6 w-px bg-gray-300" />
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold text-neutral-800 font-headings">Dashboard</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Link
-                to="/chat"
-                className="inline-flex items-center px-2 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-              >
-                <MessageCircle className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Chat IA</span>
-              </Link>
-              <Link
-                to="/plans"
-                className="hidden sm:inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
-              >
-                <span className="mr-2">💎</span>
-                Planos
-              </Link>
-              <button className="hidden md:inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                Configurações
-              </button>
-              <button
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-900 px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header com saudação */}
@@ -469,12 +532,7 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Sequência */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl p-4 border border-gray-200"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-2xl p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <span className="text-gray-600 text-sm">Sequência</span>
               <Target className="w-4 h-4 text-green-500" />
@@ -493,7 +551,8 @@ export default function Dashboard() {
               <span className="text-gray-600 text-sm">Energia</span>
               <Zap className="w-4 h-4 text-yellow-500" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{getEnergyLevel()}</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{getEnergyLevel()}
+            </div>
           </motion.div>
         </div>
 
@@ -501,21 +560,16 @@ export default function Dashboard() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Como você se sente? */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-white rounded-2xl p-6 border border-gray-200"
-            >
+            <motion.div data-tour="mood-card" className="bg-white rounded-2xl p-6 border border-gray-200">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <Heart className="w-5 h-5 text-blue-600" />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">Como você se sente?</h2>
               </div>
-              
+
               <p className="text-gray-600 text-sm mb-6">Registre seu humor e acompanhe sua evolução</p>
-              
+
               <div className="grid grid-cols-5 gap-2 sm:gap-4 mb-6">
                 {[
                   { mood: 1, label: 'Muito triste', emoji: '😢' },
@@ -539,10 +593,10 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
-              
+
               <div className="text-center">
                 <p className="text-sm text-gray-500 mb-3">Como foi seu dia? Compartilhe seus pensamentos...</p>
-                <button 
+                <button
                   onClick={handleMoodRegister}
                   className="w-full bg-blue-500 text-white py-3 rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!moodToday}
@@ -552,13 +606,35 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Atividades de Bem-estar */}
+            {/* Card: Fale com um Terapeuta */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="bg-white rounded-2xl p-6 border border-gray-200"
+              transition={{ delay: 0.3 }}
+              className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-6 text-white shadow-lg"
+              data-tour="therapist-card"
             >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <Users className="w-7 h-7" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Fale com um Terapeuta Humano</h3>
+                  <p className="text-purple-100 text-sm">Sessões a partir de R$ 49,90</p>
+                </div>
+              </div>
+              <p className="text-white/90 mb-4 text-sm">
+                Conecte-se com profissionais qualificados prontos para te ajudar em sua jornada de bem-estar.
+              </p>
+              <Link to="/therapists">
+                <button className="w-full bg-white text-purple-600 py-3 rounded-xl font-bold hover:bg-purple-50 transition-colors shadow-lg">
+                  Ver Terapeutas Disponíveis
+                </button>
+              </Link>
+            </motion.div>
+
+            {/* Atividades de Bem-estar */}
+            <motion.div data-tour="activities" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="bg-white rounded-2xl p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -567,7 +643,7 @@ export default function Dashboard() {
                   <h2 className="text-lg font-semibold text-gray-900">Atividades de Bem-estar</h2>
                 </div>
               </div>
-              
+
               <p className="text-gray-600 text-sm mb-6">Práticas recomendadas para seu momento atual</p>
 
               {userData.exercises.length > 0 ? (
@@ -607,7 +683,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div 
+                  <div
                     onClick={() => openActivityModal('meditation')}
                     className="p-4 rounded-xl bg-blue-50 border-2 border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
                   >
@@ -621,8 +697,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  
-                  <div 
+
+                  <div
                     onClick={() => openActivityModal('breathing')}
                     className="p-4 rounded-xl bg-green-50 border-2 border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
                   >
@@ -636,7 +712,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div
                     onClick={() => openActivityModal('mindful')}
                     className="p-4 rounded-xl bg-purple-50 border-2 border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors"
@@ -651,7 +727,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div
                     onClick={() => openActivityModal('journaling')}
                     className="p-4 rounded-xl bg-orange-50 border-2 border-orange-200 cursor-pointer hover:bg-orange-100 transition-colors"
@@ -688,6 +764,14 @@ export default function Dashboard() {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
+            {/* Cards de Gamificação */}
+            {user && (
+              <>
+                <GamificationBadge userId={user.id} />
+                <AchievementsCard userId={user.id} />
+              </>
+            )}
+
             {/* Progresso Semanal */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -699,20 +783,20 @@ export default function Dashboard() {
                 <h3 className="font-semibold text-gray-900">Progresso Semanal</h3>
                 <TrendingUp className="w-4 h-4 text-blue-500" />
               </div>
-              
+
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-600">Bem-estar Geral</span>
                   <span className="text-sm font-medium text-gray-900">{userData.weeklyProgress || 0}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${userData.weeklyProgress || 0}%` }}
                   />
                 </div>
               </div>
-              
+
               <p className="text-xs text-gray-500">+12% em relação à semana passada</p>
             </motion.div>
 
@@ -727,7 +811,7 @@ export default function Dashboard() {
                 <h3 className="font-semibold text-gray-900">Registros Recentes</h3>
                 <Calendar className="w-4 h-4 text-gray-400" />
               </div>
-              
+
               {userData.moodHistory.length > 0 ? (
                 <div className="space-y-3">
                   {userData.moodHistory.slice(-3).reverse().map((entry, index) => (
@@ -765,11 +849,9 @@ export default function Dashboard() {
               className="bg-white rounded-2xl p-6 border border-gray-200"
             >
               <h3 className="font-semibold text-gray-900 mb-4">Ações Rápidas</h3>
-              
+
               <div className="space-y-3">
-                <Link
-                  to="/chat"
-                  className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group"
+                <Link data-tour="chat-ia" to="/chat" className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors group"
                 >
                   <div className="flex items-center space-x-3">
                     <MessageCircle className="w-5 h-5 text-blue-600" />
@@ -777,10 +859,8 @@ export default function Dashboard() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                
-                <Link
-                  to="/diary"
-                  className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group"
+
+                <Link data-tour="diary-link" to="/diary" className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group"
                 >
                   <div className="flex items-center space-x-3">
                     <Book className="w-5 h-5 text-green-600" />
@@ -788,15 +868,24 @@ export default function Dashboard() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-green-600 group-hover:translate-x-1 transition-transform" />
                 </Link>
+
+                <Link to="/therapists" className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium text-purple-800">Encontrar Terapeuta</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
             </motion.div>
           </div>
         </div>
 
         {/* Modal de Atividade com Guia Passo a Passo */}
-        {isActivityModalOpen && selectedActivity && activities[selectedActivity] && (
+        {isActivityModalOpen && selectedActivity && availableActivities.find(a => a.id === selectedActivity) && (
           <ActivityGuide
-            activity={activities[selectedActivity]}
+            activity={availableActivities.find(a => a.id === selectedActivity)}
             onClose={closeActivityModal}
             onComplete={() => completeActivity(selectedActivity)}
           />
@@ -830,6 +919,72 @@ export default function Dashboard() {
               </button>
             </div>
           </motion.div>
+        )}
+
+        {/* Confetti ao completar atividade */}
+        <Confetti show={showConfetti} />
+
+        {/* Animação de Level Up */}
+        {levelUpData && (
+          <LevelUpAnimation
+            show={showLevelUp}
+            level={levelUpData.level}
+            levelName={levelUpData.name}
+            levelColor={levelUpData.color}
+            onClose={() => setShowLevelUp(false)}
+          />
+        )}
+
+        {/* Onboarding Guide */}
+        <OnboardingGuide
+          steps={dashboardSteps}
+          userId={user?.id}
+          storageKey="dashboard-onboarding-completed"
+          onComplete={() => console.log('Onboarding completed!')}
+        />
+
+        {/* Activity Guide Modal */}
+        {isActivityModalOpen && selectedActivity && activities[selectedActivity] && (
+          <ActivityGuide
+            activity={activities[selectedActivity]}
+            onClose={closeActivityModal}
+            onComplete={async () => {
+              try {
+                // Registrar conclusão da atividade no backend
+                const response = await fetch(`${API_BASE_URL}/api/activities/complete`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    activityKey: selectedActivity,
+                    activityName: activities[selectedActivity].title
+                  })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                  // Mostrar confete
+                  setShowConfetti(true);
+                  setTimeout(() => setShowConfetti(false), 4000);
+
+                  // Verificar level up
+                  if (data.gamification?.leveledUp) {
+                    setLevelUpData({
+                      level: data.gamification.newLevel || 1,
+                      name: data.gamification.newLevel || 'Iniciante',
+                      color: data.gamification.levelColor || 'blue'
+                    });
+                    setShowLevelUp(true);
+                  }
+
+                  console.log('Atividade concluída:', data);
+                }
+              } catch (error) {
+                console.error('Erro ao registrar atividade:', error);
+              }
+            }}
+          />
         )}
       </div>
     </div>

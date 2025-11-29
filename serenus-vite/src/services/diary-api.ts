@@ -3,6 +3,7 @@ import { API_BASE_URL, API_FULL_URL } from '@/config/api'
 
 interface WhatsAppDiaryEntry {
   id: string
+  title?: string
   content: string
   whatsappNumber: string
   timestamp: string
@@ -191,7 +192,7 @@ class DiaryApiService {
     return {
       id: serverEntry.id,
       date: new Date(serverEntry.timestamp),
-      title: this.generateTitleFromContent(serverEntry.content),
+      title: serverEntry.title || this.generateTitleFromContent(serverEntry.content),
       content: serverEntry.content,
       mood: this.analyzeMoodFromContent(serverEntry.content),
       moodScore: this.getMoodScoreFromContent(serverEntry.content),
@@ -217,23 +218,23 @@ class DiaryApiService {
    */
   private analyzeMoodFromContent(content: string): 'happy' | 'neutral' | 'sad' {
     const lowerContent = content.toLowerCase()
-    
+
     // Palavras positivas
     const positiveWords = ['feliz', 'alegre', 'bem', 'ótimo', 'bom', 'excelente', 'maravilhoso', 'incrível', 'amor', 'gratidão', 'obrigado', 'sucesso', 'vitória']
     // Palavras negativas
     const negativeWords = ['triste', 'mal', 'ruim', 'péssimo', 'terrível', 'horrível', 'deprimido', 'ansioso', 'preocupado', 'medo', 'raiva', 'frustrado']
-    
+
     let positiveCount = 0
     let negativeCount = 0
-    
+
     positiveWords.forEach(word => {
       if (lowerContent.includes(word)) positiveCount++
     })
-    
+
     negativeWords.forEach(word => {
       if (lowerContent.includes(word)) negativeCount++
     })
-    
+
     if (positiveCount > negativeCount) return 'happy'
     if (negativeCount > positiveCount) return 'sad'
     return 'neutral'
@@ -243,6 +244,12 @@ class DiaryApiService {
    * Converte humor para score numérico
    */
   private getMoodScoreFromContent(content: string): number {
+    const lowerContent = content.toLowerCase()
+
+    // Detectar intensidade baseado em palavras
+    if (lowerContent.includes('muito feliz') || lowerContent.includes('super feliz') || lowerContent.includes('extremamente feliz')) return 5
+    if (lowerContent.includes('muito triste') || lowerContent.includes('super triste') || lowerContent.includes('extremamente triste')) return 1
+
     const mood = this.analyzeMoodFromContent(content)
     switch (mood) {
       case 'sad': return 2
@@ -258,7 +265,7 @@ class DiaryApiService {
   private extractTagsFromContent(content: string): string[] {
     const tags: string[] = []
     const lowerContent = content.toLowerCase()
-    
+
     // Tags baseadas em palavras-chave
     const tagMap = {
       'trabalho': ['trabalho', 'emprego', 'escritório', 'reunião', 'projeto'],
@@ -269,13 +276,13 @@ class DiaryApiService {
       'viagem': ['viagem', 'férias', 'passeio', 'turismo'],
       'amigos': ['amigo', 'amiga', 'encontro', 'festa']
     }
-    
+
     Object.entries(tagMap).forEach(([tag, keywords]) => {
       if (keywords.some(keyword => lowerContent.includes(keyword))) {
         tags.push(tag)
       }
     })
-    
+
     return tags.slice(0, 3) // Limitar a 3 tags
   }
 

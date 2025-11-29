@@ -1,4 +1,6 @@
-const { query } = require('./db');
+// Detectar qual banco usar baseado na DATABASE_URL
+const usePostgres = process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres');
+const { query } = usePostgres ? require('./db') : require('./db-sqlite');
 
 /**
  * Gerenciamento de entradas do diário usando PostgreSQL
@@ -21,8 +23,8 @@ class DiaryStorage {
       const result = await query(
         `INSERT INTO diary_entries (
           id, content, whatsapp_number, user_id, user_name,
-          timestamp, sentiment, sentiment_confidence, sentiment_explanation, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          timestamp, sentiment_score, sentiment_label, metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
           id,
@@ -31,9 +33,8 @@ class DiaryStorage {
           entry.userId || null,
           entry.userName || null,
           timestamp,
-          entry.sentiment || null,
-          entry.sentimentConfidence || null,
-          entry.sentimentExplanation || null,
+          entry.sentimentScore || entry.sentimentConfidence || null,
+          entry.sentimentLabel || entry.sentiment || null,
           JSON.stringify(entry.metadata || {})
         ]
       );
@@ -42,7 +43,7 @@ class DiaryStorage {
 
       console.log('💾 Nova entrada salva no diário:', {
         id: savedEntry.id,
-        content: savedEntry.content.substring(0, 50) + '...',
+        content: savedEntry.content ? savedEntry.content.substring(0, 50) + '...' : 'N/A',
         timestamp: savedEntry.timestamp
       });
 

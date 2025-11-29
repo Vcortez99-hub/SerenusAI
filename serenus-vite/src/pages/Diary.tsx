@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Plus, 
-  Smile, 
-  Meh, 
-  Frown, 
+import {
+  Plus,
+  Smile,
+  Meh,
+  Frown,
   Search,
   ArrowLeft,
   Edit3,
+  Edit,
   Trash2,
   BookOpen,
   TrendingUp,
@@ -18,8 +19,13 @@ import {
 import { Link } from 'react-router-dom'
 import { cn, formatDate, formatTime, moodScoreToCategory, moodCategoryToScore, getMoodScoreLabel, convertDiaryMoodToDashboard, type MoodCategory, type MoodScore } from '@/lib/utils'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { OpenAIService } from '../services/openai'
 import { diaryApiService } from '../services/diary-api'
+import { encryptionService } from '../services/encryption'
+import { VoiceAssistant } from '../components/ai/VoiceAssistant'
+import { useGamification } from '../contexts/GamificationContext'
+import { Toast, ToastType } from '@/components/ui/Toast'
 
 interface DiaryEntry {
   id: string
@@ -48,17 +54,27 @@ const moodLabels = {
   sad: 'Triste'
 }
 
-// Mapeamento mais detalhado para melhor UX
+// Mapeamento simplificado - apenas 3 opções
 const moodOptions = [
-  { category: 'sad' as MoodCategory, score: 1, emoji: '😢', label: 'Muito triste' },
   { category: 'sad' as MoodCategory, score: 2, emoji: '😔', label: 'Triste' },
   { category: 'neutral' as MoodCategory, score: 3, emoji: '😐', label: 'Neutro' },
-  { category: 'happy' as MoodCategory, score: 4, emoji: '😊', label: 'Feliz' },
-  { category: 'happy' as MoodCategory, score: 5, emoji: '😄', label: 'Muito feliz' }
+  { category: 'happy' as MoodCategory, score: 4, emoji: '😊', label: 'Feliz' }
 ]
+
+// Função para saudação baseada no horário de São Paulo
+const getGreeting = () => {
+  const saoPauloTime = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
+  const hour = new Date(saoPauloTime).getHours()
+
+  if (hour >= 5 && hour < 12) return 'Bom dia'
+  if (hour >= 12 && hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
 
 export default function Diary() {
   const { user } = useAuth()
+  const { moodTheme, setMoodTheme } = useTheme()
+  const { addXp } = useGamification()
   const [entries, setEntries] = useState<DiaryEntry[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMood, setSelectedMood] = useState<string>('all')
@@ -77,6 +93,17 @@ export default function Diary() {
     tags: [] as string[],
     gratitude: [] as string[]
   })
+  const [isSaving, setIsSaving] = useState(false)
+  const submissionLock = React.useRef(false)
+  const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  })
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ message, type, isVisible: true })
+  }
 
   // Carregar entradas do localStorage e WhatsApp quando o usuário estiver disponível
   useEffect(() => {
@@ -94,14 +121,54 @@ export default function Diary() {
 
       try {
         const serverEntries = await diaryApiService.getAllEntries(user.id)
-        const convertedEntries = serverEntries.map(entry => {
-          return diaryApiService.convertToFrontendEntry(entry)
-        })
+        const convertedEntries = await Promise.all(serverEntries.map(async entry => {
+          const frontendEntry = diaryApiService.convertToFrontendEntry(entry)
+          // Ensure moodScore is typed correctly
+          if (frontendEntry.moodScore) {
+            frontendEntry.moodScore = frontendEntry.moodScore as MoodScore
+          }
+
+          // Descriptografar conteúdo se estiver criptografado
+          if (encryptionService.isEncrypted(frontendEntry.content)) {
+            try {
+              frontendEntry.content = await encryptionService.decrypt(frontendEntry.content, user.id)
+
+              // Regenerar título se ele não veio do servidor ou se parece ser gerado de conteúdo criptografado
+              // Se o título original for igual ao gerado do conteúdo criptografado (que seria o caso se serverEntry.title fosse nulo)
+              // então regeneramos com o conteúdo descriptografado
+              if (!entry.title) {
+                const words = frontendEntry.content.trim().split(' ')
+                const title = words.slice(0, 6).join(' ')
+                frontendEntry.title = title.length > 50 ? title.substring(0, 47) + '...' : title
+              }
+            } catch (error) {
+              console.warn('Erro ao descriptografar entrada:', error)
+            }
+          }
+
+          return frontendEntry
+        }))
 
         // Ordenar por data (mais recente primeiro)
         convertedEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-        setEntries(convertedEntries)
+        // Remover duplicatas (mesmo conteúdo e mesmo dia)
+        const uniqueEntries: DiaryEntry[] = []
+        const seenSignatures = new Set<string>()
+
+        for (const entry of convertedEntries) {
+          // Assinatura baseada em título, conteúdo e data (dia)
+          // Isso evita que entradas duplicadas por erro de rede/clique duplo apareçam
+          const dateStr = entry.date.toISOString().split('T')[0]
+          const signature = `${entry.title.trim()}|${entry.content.trim()}|${dateStr}`
+
+          if (!seenSignatures.has(signature)) {
+            seenSignatures.add(signature)
+            uniqueEntries.push(entry as DiaryEntry)
+          }
+        }
+
+        setEntries(uniqueEntries)
       } catch (apiError) {
         console.warn('Erro ao carregar entradas da API:', apiError)
         setEntries([])
@@ -126,13 +193,13 @@ export default function Diary() {
     if (user) {
       // Salvar apenas entradas locais no localStorage
       saveLocalEntries(updatedEntries)
-      
+
       // Sincronizar com dados do Dashboard (todas as entradas)
       const userDataKey = `user_data_${user.id}`
       const savedUserData = localStorage.getItem(userDataKey)
       if (savedUserData) {
         const userData = JSON.parse(savedUserData)
-        
+
         // Atualizar histórico de humor no Dashboard
         const moodHistory = updatedEntries.map(entry => {
           const diaryMoodScore = entry.moodScore || moodCategoryToScore(entry.mood)
@@ -142,15 +209,15 @@ export default function Diary() {
             time: entry.date.toTimeString().slice(0, 5)
           }
         })
-        
+
         const updatedUserData = {
           ...userData,
           moodHistory: moodHistory
         }
-        
+
         localStorage.setItem(userDataKey, JSON.stringify(updatedUserData))
       }
-      
+
       setEntries(updatedEntries)
     }
   }
@@ -158,17 +225,24 @@ export default function Diary() {
   // Adicionar nova entrada
   const handleAddEntry = async () => {
     if (!newEntry.title.trim() || !newEntry.content.trim()) {
-      alert('Por favor, preencha o título e o conteúdo da entrada.')
+      showToast('Por favor, preencha o título e o conteúdo da entrada.', 'error')
       return
     }
 
     if (!user) {
-      alert('Usuário não autenticado.')
+      showToast('Usuário não autenticado.', 'error')
       return
     }
 
+    if (isSaving || submissionLock.current) return
+
     try {
+      setIsSaving(true)
+      submissionLock.current = true
       const moodScore = moodCategoryToScore(newEntry.mood)
+
+      // Criptografar conteúdo antes de salvar
+      const encryptedContent = await encryptionService.encrypt(newEntry.content, user.id)
 
       // Salvar na API do servidor
       await diaryApiService.createEntry({
@@ -176,7 +250,7 @@ export default function Diary() {
         userName: user.name,
         userPhone: user.phone || '',
         title: newEntry.title,
-        content: newEntry.content,
+        content: encryptedContent,
         mood: newEntry.mood,
         moodScore: moodScore,
         tags: newEntry.tags,
@@ -186,21 +260,27 @@ export default function Diary() {
       // Recarregar entradas após salvar
       await loadAllEntries()
 
+      // Award XP
+      addXp(50, 'Nova entrada no diário')
+
       // Resetar formulário
       setNewEntry({
         title: '',
         content: '',
         mood: 'neutral',
-        moodScore: 3,
+        moodScore: 5 as MoodScore,
         tags: [],
         gratitude: []
       })
       setShowNewEntryForm(false)
 
-      alert('Entrada salva com sucesso no servidor!')
+      showToast('Entrada salva com sucesso!', 'success')
     } catch (error) {
       console.error('Erro ao salvar entrada:', error)
-      alert('Erro ao salvar entrada. Tente novamente.')
+      showToast('Erro ao salvar entrada. Tente novamente.', 'error')
+    } finally {
+      setIsSaving(false)
+      submissionLock.current = false
     }
   }
 
@@ -220,10 +300,10 @@ export default function Diary() {
       saveLocalEntries(updatedEntries)
       setSelectedEntry(null)
 
-      alert('Entrada excluída com sucesso!')
+      showToast('Entrada excluída com sucesso!', 'success')
     } catch (error) {
       console.error('Erro ao excluir entrada:', error)
-      alert('Erro ao excluir entrada. Tente novamente.')
+      showToast('Erro ao excluir entrada. Tente novamente.', 'error')
     }
   }
 
@@ -236,7 +316,7 @@ export default function Diary() {
   // Salvar edição
   const handleSaveEdit = () => {
     if (!editingEntry || !editingEntry.title.trim() || !editingEntry.content.trim()) {
-      alert('Por favor, preencha o título e o conteúdo da entrada.')
+      showToast('Por favor, preencha o título e o conteúdo da entrada.', 'error')
       return
     }
 
@@ -246,7 +326,7 @@ export default function Diary() {
       moodScore: moodScore
     }
 
-    const updatedEntries = entries.map(entry => 
+    const updatedEntries = entries.map(entry =>
       entry.id === editingEntry.id ? updatedEntry : entry
     )
     saveEntries(updatedEntries)
@@ -260,7 +340,7 @@ export default function Diary() {
 
   const filteredEntries = entries.filter(entry => {
     const matchesSearch = entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         entry.content.toLowerCase().includes(searchTerm.toLowerCase())
+      entry.content.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesMood = selectedMood === 'all' || entry.mood === selectedMood
     return matchesSearch && matchesMood
   })
@@ -270,7 +350,7 @@ export default function Diary() {
     const happy = entries.filter(e => e.mood === 'happy').length
     const neutral = entries.filter(e => e.mood === 'neutral').length
     const sad = entries.filter(e => e.mood === 'sad').length
-    
+
     return {
       happy: Math.round((happy / total) * 100),
       neutral: Math.round((neutral / total) * 100),
@@ -288,7 +368,7 @@ export default function Diary() {
     }
 
     setIsAnalyzing(true)
-    
+
     try {
       const apiKey = import.meta.env.VITE_OPENAI_API_KEY
       if (!apiKey) {
@@ -296,7 +376,7 @@ export default function Diary() {
       }
 
       const openAIService = new OpenAIService(apiKey)
-      
+
       // Preparar dados do diário para análise
       const diaryData = entries.map(entry => ({
         date: entry.date.toLocaleDateString('pt-BR'),
@@ -365,22 +445,22 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2 sm:gap-3">
               <button
-                 onClick={handleOpenAnalysis}
-                 disabled={entries.length === 0}
-                 className={cn(
-                   "hidden sm:flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm text-sm",
-                   entries.length === 0
-                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                     : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
-                 )}
-               >
-                 <BarChart3 className="w-4 h-4" />
-                 <span className="hidden md:inline">Análise do meu Diário</span>
-                 <span className="md:hidden">Análise</span>
-               </button>
+                onClick={handleOpenAnalysis}
+                disabled={entries.length === 0}
+                className={cn(
+                  "hidden sm:flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm text-sm",
+                  entries.length === 0
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700"
+                )}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="hidden md:inline">Análise do meu Diário</span>
+                <span className="md:hidden">Análise</span>
+              </button>
 
               <button
                 onClick={() => setShowNewEntryForm(true)}
@@ -402,7 +482,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
             {/* Search and Filters */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Filtros</h3>
-              
+
               {/* Search */}
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -414,7 +494,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
-              
+
               {/* Mood Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Humor</label>
@@ -437,7 +517,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                 <TrendingUp className="w-4 h-4 mr-2 text-primary-500" />
                 Estatísticas
               </h3>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -446,7 +526,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   </div>
                   <span className="text-sm font-medium text-gray-900">{stats.happy}%</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full" />
@@ -454,7 +534,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   </div>
                   <span className="text-sm font-medium text-gray-900">{stats.neutral}%</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full" />
@@ -491,9 +571,9 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       <ArrowLeft className="w-4 h-4" />
                       <span>Voltar</span>
                     </button>
-                    
+
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           startEditEntry(selectedEntry)
@@ -502,7 +582,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           handleDeleteEntry(selectedEntry.id)
@@ -513,7 +593,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4 mb-4">
                     <div className={cn(
                       "w-12 h-12 rounded-full flex items-center justify-center",
@@ -523,7 +603,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                         className: cn("w-6 h-6", moodIcons[selectedEntry.mood].color)
                       })}
                     </div>
-                    
+
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900">{selectedEntry.title}</h1>
                       <p className="text-gray-600">
@@ -536,7 +616,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {selectedEntry.tags.map((tag, index) => (
                       <span
@@ -548,12 +628,12 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <div className="prose max-w-none">
                     <p className="text-gray-700 leading-relaxed">{selectedEntry.content}</p>
                   </div>
-                  
+
                   {selectedEntry.gratitude && selectedEntry.gratitude.length > 0 && (
                     <div className="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-200">
                       <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
@@ -586,12 +666,12 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                     Nova Entrada
                   </button>
                 </div>
-                
+
                 <div className="grid gap-6">
                   <AnimatePresence>
                     {filteredEntries.map((entry) => {
                       const MoodIcon = moodIcons[entry.mood].icon
-                      
+
                       return (
                         <motion.div
                           key={entry.id}
@@ -608,7 +688,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                             )}>
                               <MoodIcon className={cn("w-6 h-6", moodIcons[entry.mood].color)} />
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2 flex-1 min-w-0">
@@ -618,11 +698,11 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                                   {entry.date.toLocaleDateString('pt-BR')}
                                 </span>
                               </div>
-                              
+
                               <p className="text-gray-600 text-sm line-clamp-2 mb-3">
                                 {entry.content}
                               </p>
-                              
+
                               <div className="flex items-center justify-between">
                                 <div className="flex flex-wrap gap-1">
                                   {entry.tags.slice(0, 3).map((tag, index) => (
@@ -639,7 +719,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 <span className={cn(
                                   "px-2 py-1 rounded-full text-xs font-medium",
                                   moodIcons[entry.mood].bg,
@@ -654,13 +734,13 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       )
                     })}
                   </AnimatePresence>
-                  
+
                   {filteredEntries.length === 0 && (
                     <div className="text-center py-12">
                       <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma entrada encontrada</h3>
                       <p className="text-gray-600 mb-4">
-                        {searchTerm || selectedMood !== 'all' 
+                        {searchTerm || selectedMood !== 'all'
                           ? 'Tente ajustar os filtros de busca'
                           : 'Comece criando sua primeira entrada no diário'
                         }
@@ -701,7 +781,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Nova Entrada no Diário</h2>
+                <h2 className="text-xl font-semibold text-gray-900">{getGreeting()}! Nova Entrada no Diário</h2>
                 <button
                   onClick={() => setShowNewEntryForm(false)}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
@@ -730,16 +810,22 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Como você se sente?
                   </label>
-                  <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {moodOptions.map((option) => (
                       <button
                         key={option.score}
                         type="button"
-                        onClick={() => setNewEntry({ 
-                          ...newEntry, 
-                          mood: option.category,
-                          moodScore: option.score
-                        })}
+                        onClick={() => {
+                          setNewEntry({
+                            ...newEntry,
+                            mood: option.category,
+                            moodScore: option.score as MoodScore
+                          })
+                          // Update global theme based on mood
+                          if (option.category === 'happy') setMoodTheme('energetic')
+                          else if (option.category === 'sad') setMoodTheme('melancholic')
+                          else setMoodTheme('calm')
+                        }}
                         className={cn(
                           "flex flex-col items-center p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105",
                           newEntry.moodScore === option.score
@@ -756,13 +842,21 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
 
                 {/* Conteúdo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Conte sobre seu dia
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Conte sobre seu dia
+                    </label>
+                    <VoiceAssistant
+                      onTranscript={(text) => setNewEntry(prev => ({
+                        ...prev,
+                        content: prev.content + (prev.content ? ' ' : '') + text
+                      }))}
+                    />
+                  </div>
                   <textarea
                     value={newEntry.content}
                     onChange={(e) => setNewEntry({ ...newEntry, content: e.target.value })}
-                    placeholder="Descreva seus pensamentos, sentimentos e experiências..."
+                    placeholder="Descreva seus pensamentos, sentimentos e experiências... (ou use o microfone para ditar)"
                     rows={6}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
@@ -810,16 +904,24 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                   </button>
                   <button
                     onClick={handleAddEntry}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Salvar Entrada
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Entrada'
+                    )}
                   </button>
                 </div>
               </div>
             </motion.div>
           </motion.div>
         )}
-       </AnimatePresence>
+      </AnimatePresence>
 
       {/* Modal de Edição de Entrada */}
       <AnimatePresence>
@@ -873,10 +975,10 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                       <button
                         key={option.score}
                         type="button"
-                        onClick={() => setEditingEntry({ 
-                          ...editingEntry, 
+                        onClick={() => setEditingEntry({
+                          ...editingEntry,
                           mood: option.category,
-                          moodScore: option.score
+                          moodScore: option.score as MoodScore
                         })}
                         className={cn(
                           "flex flex-col items-center p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105",
@@ -894,9 +996,17 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
 
                 {/* Conteúdo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Conte sobre seu dia
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Conte sobre seu dia
+                    </label>
+                    <VoiceAssistant
+                      onTranscript={(text) => setEditingEntry(prev => prev ? ({
+                        ...prev,
+                        content: prev.content + (prev.content ? ' ' : '') + text
+                      }) : null)}
+                    />
+                  </div>
                   <textarea
                     value={editingEntry.content}
                     onChange={(e) => setEditingEntry({ ...editingEntry, content: e.target.value })}
@@ -1021,7 +1131,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                     <BarChart3 className="w-5 h-5 text-purple-600" />
                     <h3 className="font-semibold text-gray-900">Análise Detalhada</h3>
                   </div>
-                  
+
                   {isAnalyzing ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="text-center">
@@ -1057,7 +1167,7 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
                     <Sparkles className="w-4 h-4" />
                     <span>{isAnalyzing ? 'Analisando...' : 'Gerar Nova Análise'}</span>
                   </button>
-                  
+
                   <button
                     onClick={() => setShowAnalysisModal(false)}
                     className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
@@ -1070,6 +1180,13 @@ Forneça uma análise empática, construtiva e orientada para o crescimento pess
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   )
 }

@@ -3,22 +3,28 @@
 @import "tailwindcss/utilities";
 
 :root {
-  /* EssentIA Design System Colors */
-  --primary: #6B9BD1;
-  --primary-light: #9DC8E3;
-  --primary-bg: #E8F4F8;
-  --accent-green: #7FB069;
-  --neutral-warm: #F5F5F0;
-  --text-main: #2C3E50;
-  --alert-soft: #F4E4C1;
-  --white: #ffffff;
-  
-  /* Semantic Variables */
-  --background: var(--white);
-  --foreground: var(--text-main);
-  --card-bg: var(--white);
-  --border: #E5E7EB;
-  --border-light: #F3F4F6;
+  /* EssentIA Design System Colors - Mapped to Tailwind */
+  --primary: #0ea5e9;
+  --primary-light: #e0f2fe;
+  --primary-dark: #0369a1;
+  --secondary: #8b5cf6;
+  --accent: #f43f5e;
+
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+
+  --text-main: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
 * {
@@ -32,92 +38,140 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--background);
+  color: var(--text-main);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.5s ease;
+  overflow-x: hidden;
 }
 
-/* Classe para efeito de folhas ativo */
-body.leaves-effect {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%) !important;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Outfit', 'Poppins', system-ui, -apple-system, sans-serif;
   font-weight: 600;
   line-height: 1.2;
   color: var(--text-main);
+  letter-spacing: -0.02em;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--neutral-warm);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 4px;
+  background: var(--text-muted);
+  border-radius: 10px;
+  opacity: 0.5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-light);
+  background: var(--text-secondary);
 }
 
-/* Smooth transitions */
-.transition-all {
-  transition: all 0.2s ease-in-out;
+/* Utility Classes */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Focus styles */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+.glass-dark {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Button styles */
+.card-premium {
+  @apply bg-white rounded-xl border border-neutral-100 shadow-card hover:shadow-card-hover transition-all duration-300;
+}
+
 .btn-primary {
-  @apply bg-primary-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-600 transition-colors shadow-lg hover:shadow-xl focus-ring;
+  @apply bg-primary-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-700 active:bg-primary-800 transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 hover:-translate-y-0.5;
 }
 
 .btn-secondary {
-  @apply bg-white text-primary-500 border border-primary-500 px-6 py-3 rounded-xl font-medium hover:bg-primary-50 transition-colors focus-ring;
+  @apply bg-white text-neutral-700 border border-neutral-200 px-6 py-2.5 rounded-lg font-medium hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300 transition-all shadow-sm hover:shadow;
 }
 
-/* Card styles */
-.card {
-  @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6;
+.btn-ghost {
+  @apply text-neutral-600 hover:bg-neutral-100 px-4 py-2 rounded-lg transition-colors;
 }
 
-/* Animation utilities */
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+.input-field {
+  @apply w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-neutral-400 text-neutral-900;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
 
-@keyframes fadeIn {
+/* Mood Themes */
+/* Calm (Anxiety/Stress) - Soft Greens & Teals */
+.theme-calm {
+  --primary: #2dd4bf;
+  /* Teal 400 */
+  --primary-light: #ccfbf1;
+  --primary-dark: #0f766e;
+  --secondary: #99f6e4;
+  --background: #f0fdfa;
+}
+
+/* Energetic (Happy/Excited) - Vibrant Oranges & Yellows */
+.theme-energetic {
+  --primary: #f59e0b;
+  /* Amber 500 */
+  --primary-light: #fef3c7;
+  --primary-dark: #b45309;
+  --secondary: #fcd34d;
+  --background: #fffbeb;
+}
+
+/* Melancholic (Sad/Depressed) - Comforting Blues & Purples */
+.theme-melancholic {
+  --primary: #6366f1;
+  /* Indigo 500 */
+  --primary-light: #e0e7ff;
+  --primary-dark: #4338ca;
+  --secondary: #818cf8;
+  --background: #eef2ff;
+}
+
+/* Focus (Serene Mode) - Minimalist Grays */
+.serene-mode {
+  --primary: #525252;
+  /* Neutral 600 */
+  --primary-light: #f5f5f5;
+  --primary-dark: #262626;
+  --secondary: #a3a3a3;
+  --background: #fafafa;
+  --text-main: #404040;
+}
+
+/* Animations */
+.animate-enter {
+  animation: enter 0.5s ease-out forwards;
+}
+
+@keyframes enter {
   from {
     opacity: 0;
+    transform: translateY(10px);
   }
-  to {
-    opacity: 1;
-  }
-}
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
   to {
     opacity: 1;
     transform: translateY(0);

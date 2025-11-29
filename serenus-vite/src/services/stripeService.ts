@@ -9,17 +9,19 @@ console.log('🔧 Variáveis de ambiente:');
 console.log('- VITE_STRIPE_PUBLISHABLE_KEY:', STRIPE_PUBLISHABLE_KEY ? '✅ Definida' : '❌ Não definida');
 console.log('- API_FULL_URL:', API_FULL_URL);
 
-// Instância do Stripe (singleton)
+// Instância do Stripe (singleton) - COMENTADO PARA DEMONSTRAÇÃO
 let stripePromise: Promise<Stripe | null>;
 
 /**
- * Obter instância do Stripe
+ * Obter instância do Stripe - COMENTADO PARA DEMONSTRAÇÃO
  */
 export const getStripe = (): Promise<Stripe | null> => {
-  if (!stripePromise) {
-    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
-  }
-  return stripePromise;
+  // if (!stripePromise) {
+  //   stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  // }
+  // return stripePromise;
+  console.warn('⚠️ Stripe desabilitado para demonstração');
+  return Promise.resolve(null);
 };
 
 /**

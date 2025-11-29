@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migração Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔧 Migração Admin</h1>
+        <p>Digite seu email para se tornar administrador:</p>
+
+        <input type="email" id="emailInput" placeholder="seu-email@exemplo.com" value="vinicius.cortez03@gmail.com" />
+
+        <button onclick="migrateAdmin()" id="migrateBtn">
+            Tornar Admin
+        </button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function migrateAdmin() {
+            const email = document.getElementById('emailInput').value;
+            const btn = document.getElementById('migrateBtn');
+            const result = document.getElementById('result');
+
+            if (!email) {
+                alert('Por favor, digite um email');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Processando...';
+            result.style.display = 'none';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/migrate-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    result.className = 'result success';
+                    result.textContent = '✅ ' + data.message;
+                    result.style.display = 'block';
+
+                    setTimeout(() => {
+                        alert('Migração concluída! Faça logout e login novamente para ver o menu Admin.');
+                    }, 500);
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = '❌ Erro: ' + error.message;
+                result.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Tornar Admin';
+            }
+        }
+    </script>
+</body>
+
+</html>

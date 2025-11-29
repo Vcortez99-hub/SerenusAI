@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckIcon, StarIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
+import { Check, Star, Mail, Shield, Zap, Heart, ArrowRight } from 'lucide-react';
 import { useStripe, formatPrice, Plan as StripePlan, getPlans } from '../services/stripeService';
+import { Link } from 'react-router-dom';
 
 const Plans: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [plans, setPlans] = useState<StripePlan[]>([
-    // Planos de fallback caso a API não carregue
     {
       id: 'basic',
       name: 'Plano Básico',
@@ -48,7 +48,6 @@ const Plans: React.FC = () => {
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const { isLoading, error, handleCheckout, clearError } = useStripe();
 
-  // Carregar planos da API
   useEffect(() => {
     const loadPlans = async () => {
       try {
@@ -56,15 +55,13 @@ const Plans: React.FC = () => {
         if (plansData && plansData.length > 0) {
           setPlans(plansData);
         }
-        // Se não conseguir carregar da API, mantém os planos de fallback
       } catch (error) {
         console.error('Erro ao carregar planos da API, usando planos de fallback:', error);
-        // Mantém os planos de fallback que já estão no estado inicial
       } finally {
         setIsLoadingPlans(false);
       }
     };
-    
+
     loadPlans();
   }, []);
 
@@ -76,7 +73,7 @@ const Plans: React.FC = () => {
 
   const handleProceedToCheckout = async () => {
     if (!selectedPlan || !customerEmail) return;
-    
+
     await handleCheckout(selectedPlan, customerEmail);
     setShowEmailModal(false);
   };
@@ -89,199 +86,215 @@ const Plans: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-neutral-50 pb-12">
+      {/* Header with Glassmorphism */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-200/60 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/dashboard" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary-500/20 group-hover:scale-110 transition-transform">
+                <Heart className="w-5 h-5" />
+              </div>
+              <span className="text-xl font-headings font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                Essentia
+              </span>
+            </Link>
+
+            <Link
+              to="/dashboard"
+              className="text-neutral-600 hover:text-primary-600 font-medium transition-colors flex items-center gap-2"
+            >
+              <ArrowRight className="w-4 h-4 rotate-180" />
+              Voltar para Dashboard
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Escolha seu Plano
+          <div className="inline-flex items-center px-4 py-2 bg-white border border-primary-100 rounded-full shadow-sm mb-6">
+            <Star className="w-4 h-4 text-primary-500 mr-2 fill-current" />
+            <span className="text-sm font-bold text-primary-700">Invista em você</span>
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-headings font-bold text-neutral-900 mb-6">
+            Escolha o plano ideal para <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
+              sua jornada de evolução
+            </span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-            Transforme sua jornada de autoconhecimento com o EssentIA. 
-            Escolha o plano que melhor se adapta às suas necessidades.
+          <p className="text-xl text-neutral-500 max-w-2xl mx-auto">
+            Desbloqueie todo o potencial do EssentIA com recursos exclusivos projetados para acelerar seu bem-estar.
           </p>
         </motion.div>
 
-        {/* Loading State */}
         {isLoadingPlans ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-lg text-gray-600 dark:text-gray-400">Carregando planos...</span>
+          <div className="flex justify-center items-center py-20">
+            <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          <>
-            {/* Plans Grid */}
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {plans.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden ${
-                plan.popular ? 'ring-4 ring-blue-500 scale-105' : ''
-              }`}
-            >
-              {/* Popular Badge */}
-              {plan.popular && (
-                <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-bl-lg">
-                  <div className="flex items-center space-x-1">
-                    <StarIcon className="w-4 h-4" />
-                    <span className="text-sm font-semibold">Mais Popular</span>
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {plans.map((plan, index) => (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`relative bg-white rounded-3xl p-8 border transition-all duration-300 ${plan.popular
+                    ? 'border-primary-500 shadow-2xl shadow-primary-500/10 scale-105 z-10'
+                    : 'border-neutral-200 shadow-xl hover:shadow-2xl hover:border-primary-200'
+                  }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
+                    <div className="bg-gradient-to-r from-primary-600 to-secondary-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg flex items-center gap-2">
+                      <Star className="w-4 h-4 fill-current" />
+                      Mais Popular
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="p-8">
-                {/* Plan Header */}
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-2xl font-headings font-bold text-neutral-900 mb-2">
                     {plan.name}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-neutral-500 mb-6 h-12 flex items-center justify-center">
                     {plan.description}
                   </p>
                   <div className="flex items-baseline justify-center">
-                    <span className="text-5xl font-bold text-gray-900 dark:text-white">
+                    <span className="text-5xl font-bold text-neutral-900 tracking-tight">
                       {formatPrice(plan.price)}
                     </span>
-                    <span className="text-xl text-gray-600 dark:text-gray-400 ml-2">
+                    <span className="text-neutral-500 ml-2 font-medium">
                       /mês
                     </span>
                   </div>
                 </div>
 
-                {/* Features List */}
                 <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start">
-                      <CheckIcon className="w-5 h-5 text-green-500 mt-0.5 mr-3 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">
+                    <li key={featureIndex} className="flex items-start gap-3">
+                      <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${plan.popular ? 'bg-primary-100 text-primary-600' : 'bg-neutral-100 text-neutral-600'
+                        }`}>
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-neutral-600 font-medium">
                         {feature}
                       </span>
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA Button */}
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
                   disabled={isLoading}
-                  className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-                    plan.id === 'premium'
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
-                      : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group ${plan.popular
+                      ? 'bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white shadow-lg hover:shadow-primary-500/25'
+                      : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isLoading && selectedPlan === plan.id ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Processando...
-                    </div>
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Processando...</span>
+                    </>
                   ) : (
-                    'Assinar Agora'
+                    <>
+                      <span>Assinar Agora</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
                   )}
                 </button>
-              </div>
-            </motion.div>
-          ))}
-            </div>
-          </>
+              </motion.div>
+            ))}
+          </div>
         )}
 
-        {/* Additional Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-center mt-16"
+          className="mt-20"
         >
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Por que escolher o EssentIA?
-            </h3>
-            <div className="grid md:grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Seguro e Privado</h4>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Seus dados são criptografados e protegidos com os mais altos padrões de segurança.
-                </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-neutral-100 text-center">
+              <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-green-600">
+                <Shield className="w-7 h-7" />
               </div>
-              <div>
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">IA Avançada</h4>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Tecnologia de ponta para análise precisa de sentimentos e insights personalizados.
-                </p>
+              <h4 className="text-lg font-bold text-neutral-900 mb-3">Seguro e Privado</h4>
+              <p className="text-neutral-500">
+                Seus dados são criptografados de ponta a ponta e protegidos com os mais altos padrões de segurança.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-neutral-100 text-center">
+              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-600">
+                <Zap className="w-7 h-7" />
               </div>
-              <div>
-                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z" />
-                  </svg>
-                </div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Suporte 24/7</h4>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Nossa equipe está sempre disponível para ajudar você em sua jornada.
-                </p>
+              <h4 className="text-lg font-bold text-neutral-900 mb-3">IA Avançada</h4>
+              <p className="text-neutral-500">
+                Tecnologia de ponta para análise precisa de sentimentos e insights personalizados em tempo real.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-neutral-100 text-center">
+              <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-purple-600">
+                <Heart className="w-7 h-7" />
               </div>
+              <h4 className="text-lg font-bold text-neutral-900 mb-3">Suporte Humanizado</h4>
+              <p className="text-neutral-500">
+                Nossa equipe de especialistas está sempre disponível para ajudar você em cada passo da sua jornada.
+              </p>
             </div>
           </div>
         </motion.div>
 
-        {/* Money Back Guarantee */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-center mt-8"
+          className="text-center mt-12 bg-primary-50 rounded-2xl p-6 border border-primary-100 inline-block w-full"
         >
-          <p className="text-gray-600 dark:text-gray-400">
-            💰 <strong>Garantia de 30 dias</strong> - Não ficou satisfeito? Devolvemos seu dinheiro!
+          <p className="text-primary-800 font-medium flex items-center justify-center gap-2">
+            <span className="text-2xl">💰</span>
+            <strong>Garantia de 30 dias</strong> - Não ficou satisfeito? Devolvemos seu dinheiro integralmente!
           </p>
         </motion.div>
 
         {/* Email Modal */}
         {showEmailModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl"
+              className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-neutral-200"
             >
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <EnvelopeIcon className="w-8 h-8 text-white" />
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6 text-primary-600">
+                  <Mail className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-2xl font-headings font-bold text-neutral-900 mb-2">
                   Finalizar Assinatura
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Digite seu email para prosseguir com o pagamento
+                <p className="text-neutral-500">
+                  Confirme seu email para prosseguir com o pagamento seguro
                 </p>
               </div>
 
               {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-start gap-3">
+                  <div className="mt-0.5"><Shield className="w-4 h-4" /></div>
+                  <span className="text-sm font-medium">{error}</span>
                 </div>
               )}
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-neutral-700 mb-2 ml-1">
                   Email
                 </label>
                 <input
@@ -289,31 +302,31 @@ const Plans: React.FC = () => {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                   disabled={isLoading}
                 />
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex gap-3">
                 <button
                   onClick={closeModal}
                   disabled={isLoading}
-                  className="flex-1 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  className="flex-1 py-3 px-4 border border-neutral-200 rounded-xl text-neutral-700 font-bold hover:bg-neutral-50 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleProceedToCheckout}
                   disabled={isLoading || !customerEmail.trim()}
-                  className="flex-1 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processando...
-                    </div>
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Processando...</span>
+                    </>
                   ) : (
-                    'Prosseguir'
+                    <span>Prosseguir</span>
                   )}
                 </button>
               </div>

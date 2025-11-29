@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { EmotionalHealthData } from '@/components/EmotionalHealthAssessment'
+import { API_BASE_URL } from '@/config/api'
 
 interface User {
   id: string
@@ -19,6 +20,8 @@ interface User {
     recommendations: string[]
   }
   createdAt: string
+  is_admin?: number
+  cpf?: string
 }
 
 interface AuthContextType {
@@ -26,6 +29,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>
   register: (userData: RegisterData) => Promise<boolean>
   logout: () => void
+  updateUser: (user: User) => void
   isAuthenticated: boolean
   isLoading: boolean
 }
@@ -35,6 +39,7 @@ interface RegisterData {
   email: string
   password: string
   phone: string
+  cpf: string
   goals: string[]
   preferences: {
     notifications: boolean
@@ -88,13 +93,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
-      // Usar URL da API configurada
-      const API_URL = import.meta.env.VITE_API_URL || 'https://serenusai.onrender.com'
+      console.log('🔐 Registrando usuário:', userData.email, 'usando API_BASE_URL:', API_BASE_URL)
 
-      console.log('🔐 Registrando usuário:', userData.email, 'na API:', API_URL)
-
-      // Registrar no backend
-      const response = await fetch(`${API_URL}/api/auth/register`, {
+      // Registrar no backend (usa proxy do Vite em dev, URL completa em prod)
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,13 +136,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Usar URL da API configurada
-      const API_URL = import.meta.env.VITE_API_URL || 'https://serenusai.onrender.com'
+      console.log('🔐 Fazendo login:', email, 'usando API_BASE_URL:', API_BASE_URL)
 
-      console.log('🔐 Fazendo login:', email, 'na API:', API_URL)
-
-      // Fazer login no backend
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      // Fazer login no backend (usa proxy do Vite em dev, URL completa em prod)
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,11 +176,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null)
   }
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser)
+    localStorage.setItem('essentia_current_user', JSON.stringify(updatedUser))
+  }
+
   const value: AuthContextType = {
     user,
     login,
     register,
     logout,
+    updateUser,
     isAuthenticated: !!user,
     isLoading
   }

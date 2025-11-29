@@ -9,13 +9,20 @@ import Plans from './pages/Plans'
 import PaymentSuccess from './pages/PaymentSuccess'
 import Onboarding from './pages/Onboarding'
 import Login from './pages/Login'
+import Admin from './pages/Admin'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
+import PublicRoute from './components/PublicRoute'
 import ErrorBoundary from './components/ErrorBoundary'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { GamificationProvider } from './contexts/GamificationContext'
+import TherapistRegister from './pages/TherapistRegister'
+import TherapistMarketplace from './pages/TherapistMarketplace'
+import AdminTherapists from './pages/AdminTherapists'
 
 const AppContent: React.FC = () => {
   useEffect(() => {
-    document.body.style.background = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)'
-    document.body.style.transition = 'background 0.5s ease'
+    // Styles are now handled by global CSS and Tailwind classes
   }, [])
 
   return (
@@ -24,17 +31,23 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/" element={
             <ErrorBoundary>
-              <Home />
+              <PublicRoute>
+                <Home />
+              </PublicRoute>
             </ErrorBoundary>
           } />
           <Route path="/login" element={
             <ErrorBoundary>
-              <Login />
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
             </ErrorBoundary>
           } />
           <Route path="/onboarding" element={
             <ErrorBoundary>
-              <Onboarding />
+              <PublicRoute>
+                <Onboarding />
+              </PublicRoute>
             </ErrorBoundary>
           } />
           <Route path="/dashboard" element={
@@ -68,6 +81,26 @@ const AppContent: React.FC = () => {
               <ProtectedRoute><PaymentSuccess /></ProtectedRoute>
             </ErrorBoundary>
           } />
+          <Route path="/admin" element={
+            <ErrorBoundary>
+              <AdminRoute><Admin /></AdminRoute>
+            </ErrorBoundary>
+          } />
+          <Route path="/admin/therapists" element={
+            <ErrorBoundary>
+              <AdminRoute><AdminTherapists /></AdminRoute>
+            </ErrorBoundary>
+          } />
+          <Route path="/therapist-register" element={
+            <ErrorBoundary>
+              <PublicRoute><TherapistRegister /></PublicRoute>
+            </ErrorBoundary>
+          } />
+          <Route path="/therapists" element={
+            <ErrorBoundary>
+              <ProtectedRoute><TherapistMarketplace /></ProtectedRoute>
+            </ErrorBoundary>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ErrorBoundary>
@@ -76,7 +109,13 @@ const AppContent: React.FC = () => {
 }
 
 function App() {
-  return <AppContent />
+  return (
+    <ThemeProvider>
+      <GamificationProvider>
+        <AppContent />
+      </GamificationProvider>
+    </ThemeProvider>
+  )
 }
 
 export default App

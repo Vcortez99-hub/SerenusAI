@@ -1,50 +1,120 @@
+# =============================================================================
+# RENDER.COM - Configuração de Deploy Completo - EssentIA
+# =============================================================================
+
 services:
-  # Backend API
+  # ===========================================================================
+  # BACKEND - API Node.js/Express
+  # ===========================================================================
   - type: web
     name: essentia-api
     runtime: node
     region: oregon
+    plan: free
     rootDir: serenus-vite/server
     buildCommand: npm install
     startCommand: node index.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         fromDatabase:
           name: essentia-db
           property: connectionString
       - key: OPENAI_API_KEY
-        sync: false
+        sync: false # OBRIGATÓRIO: Configure no dashboard
+      - key: STRIPE_SECRET_KEY
+        sync: false # OBRIGATÓRIO: Configure no dashboard
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false # OBRIGATÓRIO: Configure no dashboard
       - key: ZAPI_INSTANCE_ID
-        sync: false
+        sync: false # OPCIONAL: WhatsApp integration
       - key: ZAPI_TOKEN
-        sync: false
+        sync: false # OPCIONAL: WhatsApp integration
       - key: ZAPI_CLIENT_TOKEN
-        sync: false
+        sync: false # OPCIONAL: WhatsApp integration
       - key: ZAPI_WEBHOOK_URL
-        sync: false
+        sync: false # OPCIONAL: WhatsApp integration
+      - key: JWT_SECRET
+        generateValue: true # Render gera automaticamente
       - key: FRONTEND_URL
-        sync: false
+        value: https://essentia-frontend.onrender.com
+      - key: CORS_ORIGIN
+        value: https://essentia-frontend.onrender.com
 
-  # Frontend (Static Site)
+  # ===========================================================================
+  # FRONTEND - React/Vite (Static Site)
+  # ===========================================================================
   - type: web
     name: essentia-frontend
     runtime: static
     region: oregon
+    plan: free
     rootDir: serenus-vite
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     headers:
       - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
         name: Cache-Control
         value: public, max-age=0, must-revalidate
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://essentia-api.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://essentia-api.onrender.com
 
-# Database
+# =============================================================================
+# BANCO DE DADOS - PostgreSQL
+# =============================================================================
 databases:
   - name: essentia-db
     databaseName: essentia
     region: oregon
+    plan: free # Grátis por 90 dias
+    postgresMajorVersion: 15
+    ipAllowList: [] # Permitir todas as conexões
+
+# =============================================================================
+# INSTRUÇÕES PÓS-DEPLOY (IMPORTANTE!)
+# =============================================================================
+#
+# 1. APÓS O PRIMEIRO DEPLOY, INICIALIZE O BANCO:
+#    - Vá em: Dashboard > essentia-api > Shell
+#    - Execute: node init-database-render.js
+#    - Aguarde mensagem: "✅ Banco de dados inicializado com sucesso!"
+#
+# 2. CONFIGURE VARIÁVEIS DE AMBIENTE OBRIGATÓRIAS:
+#    - Dashboard > essentia-api > Environment
+#    - OPENAI_API_KEY: sk-... (OpenAI)
+#    - STRIPE_SECRET_KEY: sk_live_... (Stripe)
+#    - STRIPE_WEBHOOK_SECRET: whsec_... (Stripe)
+#
+# 3. TESTE A APLICAÇÃO:
+#    - Frontend: https://essentia-frontend.onrender.com
+#    - Backend: https://essentia-api.onrender.com/health
+#
+# 4. FUNCIONAMENTO:
+#    ✅ Registro de usuários → Empresa "General" automática
+#    ✅ Diário, Chat, Wellness, Gamificação
+#    ✅ Pagamentos Stripe
+#    ✅ Integração WhatsApp (se configurado)
+#    ✅ Notificações, Conquistas, IA
+#
+# =============================================================================

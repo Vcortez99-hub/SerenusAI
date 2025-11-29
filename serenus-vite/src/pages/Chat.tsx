@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Send, 
-  Brain, 
-  Mic, 
+import {
+  Send,
+  Brain,
+  Mic,
   MicOff,
-  Paperclip, 
+  Paperclip,
   MoreHorizontal,
   ArrowLeft,
   Volume2,
@@ -52,15 +52,15 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [conversationHistory, setConversationHistory] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([])
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [audioError, setAudioError] = useState<string | null>(null)
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const openAIService = useRef<OpenAIService | null>(null)
-  
+
   const {
     isRecording,
     audioBlob,
@@ -145,23 +145,52 @@ export default function Chat() {
     // Generate AI response
     try {
       const aiContent = await generateAIResponse(content)
-      
+
       // Update conversation history
       setConversationHistory(prev => [
         ...prev,
         { role: 'user', content: content },
         { role: 'assistant', content: aiContent }
       ])
-      
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: aiContent,
         sender: 'ai',
         timestamp: new Date()
       }
-      
+
       setMessages(prev => [...prev, aiResponse])
       setIsTyping(false)
+
+      // Log chat interaction
+      // Note: In a real app, we would send the message to the backend to be processed by OpenAI there
+      // For now, we just log the interaction
+      try {
+        // Get user ID from somewhere (context or local storage) - assuming we have access to auth context or similar
+        // Since we don't have direct access to user here, we'll skip if not available or try to get from localStorage
+        const userDataStr = localStorage.getItem('user_data'); // This might not be the right key for user info
+        // Better to use the API_BASE_URL imported from config
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+        // We need the user ID. Let's assume it's available in localStorage under 'user' or we can't log it properly without context
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              message: content,
+              conversationHistory
+            })
+          }).catch(err => console.error('Error logging chat:', err));
+        }
+      } catch (logError) {
+        console.error('Error logging chat:', logError);
+      }
+
     } catch (error) {
       console.error('Error in handleSendMessage:', error)
       setIsTyping(false)
@@ -196,7 +225,7 @@ export default function Chat() {
       try {
         setAudioError(null)
         setIsListening(true)
-        
+
         await speechToTextService.startListening(
           (transcript, isFinal) => {
             setTranscript(transcript)
@@ -261,11 +290,11 @@ export default function Chat() {
                 </div>
                 <div>
                   <h1 className="font-semibold text-gray-900">IA com Alma</h1>
-                  <p className="text-sm text-gray-600">por Daniella Vilar</p>
+                  <p className="text-sm text-gray-600">por Dr. Ana Silva</p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                 <Volume2 className="w-5 h-5" />
@@ -308,16 +337,16 @@ export default function Chat() {
                         <span className="text-xs font-medium text-gray-600">IA com Alma</span>
                       </div>
                     )}
-                    
+
                     <p className="text-sm leading-relaxed">{message.content}</p>
-                    
+
                     <div className={cn(
                       "text-xs mt-2 opacity-70",
                       message.sender === 'user' ? 'text-primary-100' : 'text-gray-500'
                     )}>
-                      {message.timestamp.toLocaleTimeString('pt-BR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                      {message.timestamp.toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
                       })}
                     </div>
                   </div>
@@ -346,7 +375,7 @@ export default function Chat() {
                 </div>
               </motion.div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -438,7 +467,7 @@ export default function Chat() {
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="flex items-end space-x-3 p-4">
               <motion.button
                 type="button"
@@ -448,7 +477,7 @@ export default function Chat() {
               >
                 <Paperclip className="w-5 h-5" />
               </motion.button>
-              
+
               <div className="flex-1">
                 <input
                   ref={inputRef}
@@ -456,12 +485,12 @@ export default function Chat() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder={
-                    isListening 
-                      ? "Escutando..." 
-                      : isRecording 
-                        ? "Gravando..." 
-                        : isTyping 
-                          ? "Aguarde a resposta..." 
+                    isListening
+                      ? "Escutando..."
+                      : isRecording
+                        ? "Gravando..."
+                        : isTyping
+                          ? "Aguarde a resposta..."
                           : "O que está pesando aí dentro?"
                   }
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none placeholder-gray-400"
@@ -485,7 +514,7 @@ export default function Chat() {
               >
                 {isRecording ? <Square className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </motion.button>
-              
+
               {/* Voice recognition button */}
               <motion.button
                 type="button"
@@ -502,7 +531,7 @@ export default function Chat() {
               >
                 {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </motion.button>
-              
+
               <motion.button
                 type="submit"
                 disabled={!(inputValue.trim() || transcript.trim()) || isTyping}
@@ -553,7 +582,7 @@ export default function Chat() {
             <Sparkles className="w-4 h-4 mr-2 text-primary-500" />
             Recursos IA
           </h3>
-          
+
           <div className="space-y-3 text-sm">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
