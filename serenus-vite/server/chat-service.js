@@ -8,14 +8,24 @@ class ChatService {
   constructor(dbModule, notificationService) {
     this.db = dbModule;
     this.notificationService = notificationService;
-    this.initializeDatabase();
+    // Não inicializar banco em produção - tabelas já criadas em init-database-render.js
+    if (process.env.NODE_ENV !== 'production') {
+      this.initializeDatabase();
+    }
   }
 
   /**
-   * Cria tabelas necessárias
+   * Cria tabelas necessárias (apenas para desenvolvimento local com SQLite)
+   * Em produção (PostgreSQL), as tabelas já são criadas em init-database-render.js
    */
   initializeDatabase() {
     const database = this.db.db;
+
+    // Verificar se database existe (SQLite)
+    if (!database || !database.run) {
+      console.log('✅ ChatService: Usando PostgreSQL (tabelas já criadas)');
+      return;
+    }
 
     // Tabela de conversas/chats
     database.run(`
@@ -51,7 +61,7 @@ class ChatService {
     database.run('CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON chat_messages(chat_id)');
     database.run('CREATE INDEX IF NOT EXISTS idx_messages_read ON chat_messages(read)');
 
-    console.log('✅ Tabelas de chat inicializadas');
+    console.log('✅ Tabelas de chat SQLite inicializadas');
   }
 
   /**
