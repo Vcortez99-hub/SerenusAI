@@ -151,6 +151,68 @@ app.get('/health', (req, res) => {
   })
 })
 
+// 🔧 ROTA TEMPORÁRIA: Gerenciar usuários (REMOVER EM PRODUÇÃO)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const { action, email } = req.query;
+
+    if (action === 'list') {
+      // Listar todos os usuários
+      const result = await dbModule.query(
+        'SELECT id, name, email, company, created_at FROM users ORDER BY created_at DESC'
+      );
+      return res.json({
+        success: true,
+        count: result.rows.length,
+        users: result.rows
+      });
+    }
+
+    if (action === 'delete' && email) {
+      // Deletar usuário por email
+      const result = await dbModule.query(
+        'DELETE FROM users WHERE email = $1 RETURNING email',
+        [email]
+      );
+      return res.json({
+        success: true,
+        message: result.rows.length > 0 ? `✅ Usuário ${email} deletado` : `⚠️ Usuário ${email} não encontrado`,
+        deleted: result.rows.length
+      });
+    }
+
+    if (action === 'find' && email) {
+      // Buscar usuário por email
+      const result = await dbModule.query(
+        'SELECT id, name, email, company, created_at FROM users WHERE email = $1',
+        [email]
+      );
+      return res.json({
+        success: true,
+        found: result.rows.length > 0,
+        user: result.rows[0] || null
+      });
+    }
+
+    // Instruções
+    res.json({
+      success: true,
+      message: 'Debug de usuários',
+      usage: {
+        list: '/api/debug/users?action=list',
+        find: '/api/debug/users?action=find&email=seu@email.com',
+        delete: '/api/debug/users?action=delete&email=seu@email.com'
+      }
+    });
+  } catch (error) {
+    console.error('Erro na rota debug:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+})
+
 // 🎮 Rota para registrar conclusão de atividade de bem-estar
 app.post('/api/activities/complete', async (req, res) => {
   try {
